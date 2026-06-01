@@ -23,10 +23,12 @@ def write_json_if_missing(path: Path, payload: dict) -> None:
 def main() -> None:
     args = parse_args()
     batch_code = f"batch_{args.batch:03d}"
-    batch_dir = Path("data/raw") / args.source / batch_code
-    batch_dir.mkdir(parents=True, exist_ok=True)
+    input_batch_dir = Path("data/raw/input") / args.source / batch_code
+    output_batch_dir = Path("data/raw/output") / args.source / batch_code
+    input_batch_dir.mkdir(parents=True, exist_ok=True)
+    output_batch_dir.mkdir(parents=True, exist_ok=True)
 
-    readme_path = ensure_parent(batch_dir / "README.txt")
+    readme_path = ensure_parent(input_batch_dir / "README.txt")
     if not readme_path.exists():
         readme_path.write_text(
             "\n".join(
@@ -34,7 +36,8 @@ def main() -> None:
                     f"Source: {args.source}",
                     f"Batch: {batch_code}",
                     f"Initialized at: {datetime.now().isoformat()}",
-                    "Taruh file export mentah (JSON/CSV/XLSX) di folder ini.",
+                    "Folder ini untuk file input actor, template JSON, dan daftar URL.",
+                    f"Hasil scrape JSON dan metadata run simpan di: {output_batch_dir}",
                     "Simpan juga catatan manual jika ada field yang gagal diambil.",
                 ]
             ),
@@ -43,34 +46,42 @@ def main() -> None:
 
     if args.source == "google_maps":
         write_json_if_missing(
-            batch_dir / "apify_input.example.json",
+            input_batch_dir / "gmaps_input.json",
             {
-                "searchStringsArray": ["Rumah Atsiri Indonesia"],
+                "startUrls": [
+                    {
+                        "url": "https://share.google/eNJCYtgMABpSegL90"
+                    }
+                ],
                 "maxCrawledPlacesPerSearch": 1,
                 "maxReviews": 20,
                 "reviewsSort": "newest",
+                "reviewsOrigin": "google",
+                "scrapeReviewsPersonalData": True,
                 "language": "id",
             },
         )
 
     if args.source == "instagram":
         write_json_if_missing(
-            batch_dir / "apify_posts_input.example.json",
+            input_batch_dir / "ig_posts_input.json",
             {
                 "directUrls": [
-                    "https://www.instagram.com/p/POST_CODE_1/",
-                    "https://www.instagram.com/p/POST_CODE_2/",
+                    "https://www.instagram.com/rumahatsiri/"
                 ],
+                "resultsType": "posts",
                 "resultsLimit": 10,
+                "addParentData": True,
             },
         )
         write_json_if_missing(
-            batch_dir / "apify_comments_input.example.json",
+            input_batch_dir / "ig_comments_input.json",
             {
                 "directUrls": [
                     "https://www.instagram.com/p/POST_CODE_1/",
                     "https://www.instagram.com/p/POST_CODE_2/",
                 ],
+                "resultsType": "comments",
                 "resultsLimit": 30,
             },
         )

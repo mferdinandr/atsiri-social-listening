@@ -11,8 +11,8 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 ├── pyproject.toml
 ├── data/
 │   ├── raw/
-│   │   ├── google_maps/
-│   │   └── instagram/
+│   │   ├── input/
+│   │   └── output/
 │   ├── processed/
 │   └── final/
 └── scripts/
@@ -20,10 +20,28 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 
 ## Tujuan tiap folder
 
-- `data/raw/`: hasil export mentah dari Apify
+- `data/raw/input/`: file input actor, template JSON, dan daftar URL
+- `data/raw/output/`: hasil export mentah dari Apify
 - `data/processed/`: disiapkan untuk tahap berikutnya
 - `data/final/`: disiapkan untuk tahap berikutnya
 - `scripts/`: semua script kerja
+
+## Struktur batch
+
+Setiap batch sekarang dipisah ke area `input` dan `output`, lalu dikelompokkan lagi per source.
+
+Contoh:
+
+- `data/raw/input/google_maps/batch_001/README.txt`
+- `data/raw/input/google_maps/batch_001/gmaps_input.json`
+- `data/raw/output/google_maps/batch_001/gmaps_output.json`
+- `data/raw/output/google_maps/batch_001/gmaps_run.json`
+- `data/raw/input/instagram/batch_001/ig_posts_input.json`
+- `data/raw/input/instagram/batch_001/ig_comments_input.json`
+- `data/raw/input/instagram/batch_001/ig_comments_input.generated.json`
+- `data/raw/input/instagram/batch_001/comment_post_urls.txt`
+- `data/raw/output/instagram/batch_001/ig_posts_output.json`
+- `data/raw/output/instagram/batch_001/ig_comments_output.json`
 
 ## Tool
 
@@ -48,6 +66,25 @@ PLACE_NAME=Rumah Atsiri Indonesia
 INSTAGRAM_USERNAME=rumahatsiri
 ```
 
+## Input yang dipakai actor
+
+Google Maps `Xb8osYTtOjlsgI6k9`:
+
+- `startUrls`: URL Google Maps tempat
+- `maxCrawledPlacesPerSearch`: batasi jumlah place
+- `maxReviews`: jumlah review yang ingin diambil
+- `reviewsSort`: urutan review, untuk mini test pakai `newest`
+- `reviewsOrigin`: pilih `google`
+- `scrapeReviewsPersonalData`: sertakan reviewer id/url
+- `language`: bahasa hasil detail
+
+Instagram `shu8hvrXbJbY3Eb9W`:
+
+- `directUrls`: daftar URL Instagram
+- `resultsType`: `posts` atau `comments`
+- `resultsLimit`: jumlah hasil per URL
+- `addParentData`: opsional, berguna saat ambil posts dari profile URL
+
 ## Langkah kerja
 
 1. Buat folder batch:
@@ -61,28 +98,32 @@ python3 scripts/init_batch.py --source instagram --batch 1
 
 Edit dulu file:
 
-- `data/raw/google_maps/batch_001/apify_input.example.json`
+- `data/raw/input/google_maps/batch_001/gmaps_input.json`
+
+Default mini test sekarang memakai `startUrls` ke halaman Rumah Atsiri, review dari `google`, dan reviewer personal data aktif.
 
 Lalu jalankan:
 
 ```bash
 python3 scripts/run_apify_actor.py \
   --actor-id Xb8osYTtOjlsgI6k9 \
-  --input data/raw/google_maps/batch_001/apify_input.example.json \
-  --output data/raw/google_maps/batch_001/raw_export.json
+  --input data/raw/input/google_maps/batch_001/gmaps_input.json \
+  --output data/raw/output/google_maps/batch_001/gmaps_output.json
 ```
 
 3. Untuk Instagram posts, isi dulu:
 
-- `data/raw/instagram/batch_001/apify_posts_input.example.json`
+- `data/raw/input/instagram/batch_001/ig_posts_input.json`
+
+Default mini test sekarang memakai URL profil `https://www.instagram.com/rumahatsiri/` dengan `resultsType: "posts"`.
 
 Lalu jalankan:
 
 ```bash
 python3 scripts/run_apify_actor.py \
   --actor-id shu8hvrXbJbY3Eb9W \
-  --input data/raw/instagram/batch_001/apify_posts_input.example.json \
-  --output data/raw/instagram/batch_001/posts_raw.json
+  --input data/raw/input/instagram/batch_001/ig_posts_input.json \
+  --output data/raw/output/instagram/batch_001/ig_posts_output.json
 ```
 
 4. Kalau kamu sudah punya export post CSV, buat daftar URL post otomatis untuk comments:
@@ -90,25 +131,27 @@ python3 scripts/run_apify_actor.py \
 ```bash
 python3 scripts/extract_instagram_post_urls.py \
   --input /Users/user/Downloads/ig-post-scraper.csv \
-  --output-txt data/raw/instagram/batch_001/comment_post_urls.txt \
-  --output-json data/raw/instagram/batch_001/apify_comments_input.generated.json \
+  --output-txt data/raw/input/instagram/batch_001/comment_post_urls.txt \
+  --output-json data/raw/input/instagram/batch_001/ig_comments_input.generated.json \
   --limit 5 \
   --min-comments 1
 ```
+
+File JSON hasil generator akan otomatis memakai `resultsType: "comments"` agar sesuai schema actor comments.
 
 5. Jalankan comments actor:
 
 ```bash
 python3 scripts/run_apify_actor.py \
   --actor-id shu8hvrXbJbY3Eb9W \
-  --input data/raw/instagram/batch_001/apify_comments_input.generated.json \
-  --output data/raw/instagram/batch_001/comments_raw.json
+  --input data/raw/input/instagram/batch_001/ig_comments_input.generated.json \
+  --output data/raw/output/instagram/batch_001/ig_comments_output.json
 ```
 
 6. Kalau kamu masih pakai file export manual dari dashboard, taruh hasil export mentah ke:
 
-- `data/raw/google_maps/batch_001/`
-- `data/raw/instagram/batch_001/`
+- `data/raw/output/google_maps/batch_001/`
+- `data/raw/output/instagram/batch_001/`
 
 ## Field realistis untuk mini test
 

@@ -56,7 +56,8 @@ def main() -> None:
     if args.output_json:
         payload = {
             args.input_key: urls,
-            "resultsLimit": len(urls),
+            "resultsType": "comments",
+            "resultsLimit": min(max(len(urls), 1) * 10, 30),
         }
         output_json = Path(args.output_json)
         output_json.parent.mkdir(parents=True, exist_ok=True)
