@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atsiri-data-pipeline"
+version = "0.1.0"
+description = "Mini-test data pipeline for Google Maps and Instagram NLP research on Rumah Atsiri."
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.2.2",
+  "python-dateutil>=2.9.0",
+  "python-dotenv>=1.0.1",
+  "dateparser>=1.2.0",
+  "ftfy>=6.2.0",
+  "openpyxl>=3.1.5",
+]
+
+[project.optional-dependencies]
+nlp = [
+  "matplotlib>=3.9.0",
+  "scikit-learn>=1.5.0",
+  "seaborn>=0.13.2",
+  "Sastrawi>=1.0.1",
+  "wordcloud>=1.9.3",
+]
