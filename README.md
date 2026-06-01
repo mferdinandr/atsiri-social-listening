@@ -20,7 +20,8 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
     ├── apify/
     ├── google_maps/
     ├── instagram_posts/
-    └── instagram_comments/
+    ├── instagram_comments/
+    └── normalize/
 ```
 
 ## Tujuan tiap folder
@@ -29,11 +30,12 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 - `data/raw/instagram_posts/`: input test, output test, dan aset reusable semua post Instagram
 - `data/raw/instagram_comments/`: input dan output raw komentar Instagram
 - `data/processed/`: disiapkan untuk tahap berikutnya
-- `data/final/`: disiapkan untuk tahap berikutnya
+- `data/final/`: schema final, audit field, dan dokumen acuan
 - `scripts/apify/`: helper umum untuk menjalankan actor Apify
 - `scripts/google_maps/`: script khusus Google Maps
 - `scripts/instagram_posts/`: script khusus pengambilan dan indexing post Instagram
 - `scripts/instagram_comments/`: script khusus seleksi URL post dan scraping komentar Instagram
+- `scripts/normalize/`: script normalisasi raw test ke tabel final
 
 ## Struktur test
 
@@ -67,7 +69,7 @@ Contoh:
 
 Untuk fase sekarang, script yang aktif bisa jalan dengan `python3` standar.
 
-Kalau nanti masuk tahap normalisasi/cleaning, baru pasang dependency data processing.
+Dependency data processing baru benar-benar dibutuhkan saat analisis lanjutan. Untuk normalisasi test saat ini, script masih berjalan dengan `python3` standar.
 
 ## Setup token
 
@@ -202,10 +204,43 @@ Fase sekarang fokus ke:
 - generate URL post untuk comments
 - simpan raw JSON mini test
 
-Kalau mini test raw data sudah fix, baru kita tambahkan lagi script normalisasi dan cleaning.
+Setelah mini test lolos, langkah berikutnya adalah mengunci schema final dan menurunkan raw test ke bentuk tabel final.
+
+## Schema final yang dipakai
+
+- `data/final/mini_test_field_availability.md`
+- `data/final/final_table_schema.md`
+
+Dokumen pertama menjelaskan field mana yang `bisa`, `opsional`, `terbatas`, atau `derived`.
+
+Dokumen kedua mengunci bentuk output tabel final yang akan dipakai sebelum masuk `batch_001`.
+
+## Normalisasi raw test ke tabel final
+
+Jalankan semua normalisasi sekaligus:
+
+```bash
+python3 scripts/normalize/test_to_final.py
+```
+
+Atau per sumber:
+
+```bash
+python3 scripts/normalize/google_maps.py
+python3 scripts/normalize/instagram_posts.py
+python3 scripts/normalize/instagram_comments.py
+```
+
+Output normalisasi test:
+
+- `data/processed/test/google_maps/gmaps_reviews.csv`
+- `data/processed/test/google_maps/gmaps_reviewers.csv`
+- `data/processed/test/instagram_posts/instagram_posts.csv`
+- `data/processed/test/instagram_comments/instagram_comments.csv`
 
 ## Ringkasan automation
 
 - `scripts/apify/run_actor.py`: menjalankan actor Apify dari terminal dan menyimpan hasil dataset ke JSON
 - `scripts/instagram_posts/build_post_index.py`: membuat manifest reusable semua post Instagram dari output actor
 - `scripts/instagram_comments/extract_post_urls.py`: mengambil `postUrl` dari hasil scrape post supaya comments bisa dijalankan batch tanpa copy-paste manual
+- `scripts/normalize/test_to_final.py`: menjalankan seluruh normalisasi raw test ke bentuk tabel final
