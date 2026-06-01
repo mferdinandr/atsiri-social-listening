@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=10, help="How many post URLs to include")
     parser.add_argument("--min-comments", type=int, default=1, help="Minimum comment count")
     parser.add_argument("--results-limit", type=int, default=30, help="resultsLimit for comments actor")
+    parser.add_argument("--exclude-file", help="Optional TXT file containing post URLs to exclude")
     return parser.parse_args()
 
 
@@ -38,11 +39,21 @@ def main() -> None:
     batch_dir.mkdir(parents=True, exist_ok=True)
 
     rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    excluded_urls: set[str] = set()
+    if args.exclude_file:
+        exclude_path = Path(args.exclude_file)
+        if exclude_path.exists():
+            excluded_urls = {
+                line.strip()
+                for line in exclude_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            }
+
     candidates: list[tuple[int, str]] = []
     seen: set[str] = set()
     for row in rows:
         post_url = str(row.get("postUrl") or row.get("url") or "").strip()
-        if not post_url or post_url in seen:
+        if not post_url or post_url in seen or post_url in excluded_urls:
             continue
         comments_count = parse_int(row.get("commentsCount"))
         if comments_count < args.min_comments:

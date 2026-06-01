@@ -26,6 +26,18 @@ def write_csv(path: str, headers: list[str], rows: list[dict[str, str | int]]) -
         writer.writerows(rows)
 
 
+def read_ids(path: str, key: str) -> set[str]:
+    csv_path = Path(path)
+    if not csv_path.exists():
+        return set()
+    with csv_path.open(encoding="utf-8", newline="") as handle:
+        return {
+            row.get(key, "")
+            for row in csv.DictReader(handle)
+            if row.get(key, "")
+        }
+
+
 def append_text_audit(rows: list[dict[str, str]], text_key: str, mode: str) -> tuple[list[dict[str, str | int]], dict[str, int]]:
     output: list[dict[str, str | int]] = []
     clean_count = 0
@@ -76,17 +88,30 @@ def append_text_audit(rows: list[dict[str, str]], text_key: str, mode: str) -> t
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build final batch datasets from processed batch CSV files.")
     parser.add_argument("--batch-number", default="batch_001")
+    parser.add_argument("--prev-batch-number", help="Optional previous batch number to exclude duplicates from final output")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     batch = args.batch_number
+    prev_batch = args.prev_batch_number
 
     gmaps_reviews = read_csv(f"data/processed/{batch}/google_maps/gmaps_reviews.csv")
     gmaps_reviewers = read_csv(f"data/processed/{batch}/google_maps/gmaps_reviewers.csv")
     instagram_posts = read_csv(f"data/processed/{batch}/instagram_posts/instagram_posts.csv")
     instagram_comments = read_csv(f"data/processed/{batch}/instagram_comments/instagram_comments.csv")
+
+    prev_gmaps_ids: set[str] = set()
+    prev_comment_ids: set[str] = set()
+    if prev_batch:
+        prev_gmaps_ids = read_ids(f"data/final/{prev_batch}/gmaps_reviews_final.csv", "review_id")
+        prev_comment_ids = read_ids(f"data/final/{prev_batch}/instagram_comments_final.csv", "comment_id")
+        if prev_gmaps_ids:
+            gmaps_reviews = [row for row in gmaps_reviews if row.get("review_id", "") not in prev_gmaps_ids]
+            gmaps_reviewers = [row for row in gmaps_reviewers if row.get("reviewer_id", "") in {r.get("reviewer_id", "") for r in gmaps_reviews}]
+        if prev_comment_ids:
+            instagram_comments = [row for row in instagram_comments if row.get("comment_id", "") not in prev_comment_ids]
 
     gmaps_reviews_final, gmaps_stats = append_text_audit(gmaps_reviews, "review_text", "text")
     instagram_posts_final, posts_stats = append_text_audit(instagram_posts, "caption", "caption")
