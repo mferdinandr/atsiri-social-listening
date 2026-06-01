@@ -15,6 +15,7 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 │   │   ├── instagram_posts/
 │   │   └── instagram_comments/
 │   ├── processed/
+│   ├── datasets/
 │   └── final/
 └── scripts/
     ├── apify/
@@ -30,6 +31,9 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 - `data/raw/instagram_posts/`: input test, output test, dan aset reusable semua post Instagram
 - `data/raw/instagram_comments/`: input dan output raw komentar Instagram
 - `data/processed/`: disiapkan untuk tahap berikutnya
+- `data/datasets/all/`: dataset semua row hasil scrape plus audit filter
+- `data/datasets/clean/`: dataset yang sudah lolos validasi teks untuk NLP
+- `data/datasets/all/shared/` dan `data/datasets/clean/shared/`: khusus dataset reusable yang cukup dibangun sekali, misalnya `instagram_posts`
 - `data/final/`: schema final, audit field, dan dokumen acuan
 - `scripts/apify/`: helper umum untuk menjalankan actor Apify
 - `scripts/google_maps/`: script khusus Google Maps
@@ -132,7 +136,7 @@ python3 scripts/apify/run_actor.py \
 
 - `data/raw/instagram_posts/test/ig_posts_input.json`
 
-Default sekarang memakai URL profil `https://www.instagram.com/rumahatsiri/` dengan `resultsType: "posts"` dan `resultsLimit: 1500` agar bisa dipakai sebagai index master posts.
+Default sekarang memakai URL profil `https://www.instagram.com/rumahatsiri/` dengan `resultsType: "posts"` dan `resultsLimit: 1500` agar bisa dipakai sebagai index master posts. Dataset posts ini idealnya dibangun sekali, lalu dipakai ulang oleh semua batch comments.
 
 Lalu jalankan:
 

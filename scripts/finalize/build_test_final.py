@@ -25,14 +25,15 @@ def write_csv(path: str, headers: list[str], rows: list[dict[str, str | int]]) -
         writer.writerows(rows)
 
 
-def build_gmaps_reviews(rows: list[dict[str, str]]) -> tuple[list[dict[str, str | int]], dict[str, int]]:
-    output: list[dict[str, str | int]] = []
+def append_text_audit(rows: list[dict[str, str]], text_key: str, mode: str) -> tuple[list[dict[str, str | int]], list[dict[str, str | int]], dict[str, int]]:
+    output_all: list[dict[str, str | int]] = []
+    output_clean: list[dict[str, str | int]] = []
     clean_count = 0
     empty_count = 0
     invalid_count = 0
 
     for row in rows:
-        clean_text, word_count, is_valid, filter_reason = evaluate_text(row.get("review_text"))
+        clean_text, word_count, is_valid, filter_reason = evaluate_text(row.get(text_key))
         if is_valid:
             clean_count += 1
         elif filter_reason == "empty_text":
@@ -41,87 +42,28 @@ def build_gmaps_reviews(rows: list[dict[str, str]]) -> tuple[list[dict[str, str 
         else:
             invalid_count += 1
 
-        output.append(
-            {
-                **row,
-                "text_word_count": word_count,
-                "is_valid_text": "true" if is_valid else "false",
-                "filter_reason": filter_reason,
-                "clean_text": clean_text,
-            }
-        )
-
-    stats = {
-        "raw_count": len(rows),
-        "clean_count": clean_count,
-        "duplicate_count": 0,
-        "empty_text_count": empty_count,
-        "invalid_text_count": invalid_count,
-    }
-    return output, stats
-
-
-def build_instagram_posts(rows: list[dict[str, str]]) -> tuple[list[dict[str, str | int]], dict[str, int]]:
-    output: list[dict[str, str | int]] = []
-    clean_count = 0
-    empty_count = 0
-    invalid_count = 0
-
-    for row in rows:
-        clean_text, word_count, is_valid, filter_reason = evaluate_text(row.get("caption"))
-        if is_valid:
-            clean_count += 1
-        elif filter_reason == "empty_text":
-            empty_count += 1
-            invalid_count += 1
+        payload = dict(row)
+        if mode == "caption":
+            payload.update(
+                {
+                    "caption_word_count": word_count,
+                    "is_valid_caption": "true" if is_valid else "false",
+                    "filter_reason": filter_reason,
+                    "clean_caption": clean_text,
+                }
+            )
         else:
-            invalid_count += 1
-
-        output.append(
-            {
-                **row,
-                "caption_word_count": word_count,
-                "is_valid_caption": "true" if is_valid else "false",
-                "filter_reason": filter_reason,
-                "clean_caption": clean_text,
-            }
-        )
-
-    stats = {
-        "raw_count": len(rows),
-        "clean_count": clean_count,
-        "duplicate_count": 0,
-        "empty_text_count": empty_count,
-        "invalid_text_count": invalid_count,
-    }
-    return output, stats
-
-
-def build_instagram_comments(rows: list[dict[str, str]]) -> tuple[list[dict[str, str | int]], dict[str, int]]:
-    output: list[dict[str, str | int]] = []
-    clean_count = 0
-    empty_count = 0
-    invalid_count = 0
-
-    for row in rows:
-        clean_text, word_count, is_valid, filter_reason = evaluate_text(row.get("comment_text"))
+            payload.update(
+                {
+                    "text_word_count": word_count,
+                    "is_valid_text": "true" if is_valid else "false",
+                    "filter_reason": filter_reason,
+                    "clean_text": clean_text,
+                }
+            )
+        output_all.append(payload)
         if is_valid:
-            clean_count += 1
-        elif filter_reason == "empty_text":
-            empty_count += 1
-            invalid_count += 1
-        else:
-            invalid_count += 1
-
-        output.append(
-            {
-                **row,
-                "text_word_count": word_count,
-                "is_valid_text": "true" if is_valid else "false",
-                "filter_reason": filter_reason,
-                "clean_text": clean_text,
-            }
-        )
+            output_clean.append(payload)
 
     stats = {
         "raw_count": len(rows),
@@ -130,12 +72,11 @@ def build_instagram_comments(rows: list[dict[str, str]]) -> tuple[list[dict[str,
         "empty_text_count": empty_count,
         "invalid_text_count": invalid_count,
     }
-    return output, stats
+    return output_all, output_clean, stats
 
 
 def build_batch_rows(
     gmaps_stats: dict[str, int],
-    posts_stats: dict[str, int],
     comments_stats: dict[str, int],
 ) -> list[dict[str, str | int]]:
     return [
@@ -148,16 +89,6 @@ def build_batch_rows(
             **gmaps_stats,
             "status": "passed",
             "notes": "Mini test Google Maps",
-        },
-        {
-            "batch_number": "test",
-            "source": "instagram",
-            "target_data": "instagram_posts",
-            "started_at": "",
-            "finished_at": "",
-            **posts_stats,
-            "status": "passed",
-            "notes": "Mini test Instagram posts",
         },
         {
             "batch_number": "test",
@@ -191,14 +122,18 @@ def write_summary(path: str, gmaps_stats: dict[str, int], posts_stats: dict[str,
                 f"- Instagram comments clean valid: {comments_stats['clean_count']}",
                 "",
                 "## File final test",
-                "- `gmaps_reviews_final.csv`",
-                "- `gmaps_reviewers_final.csv`",
-                "- `instagram_posts_final.csv`",
-                "- `instagram_comments_final.csv`",
+                "- `data/datasets/all/test/gmaps_reviews_all.csv`",
+                "- `data/datasets/clean/test/gmaps_reviews_clean.csv`",
+                "- `data/datasets/all/shared/instagram_posts_all.csv`",
+                "- `data/datasets/clean/shared/instagram_posts_clean.csv`",
+                "- `data/datasets/all/test/instagram_comments_all.csv`",
+                "- `data/datasets/clean/test/instagram_comments_clean.csv`",
                 "- `scraping_batches_test.csv`",
                 "",
                 "## Catatan",
-                "- Dataset final untuk teks menyertakan kolom clean dan audit filter NLP.",
+                "- Folder `data/datasets/all` berisi semua row hasil scrape plus audit filter.",
+                "- Folder `data/datasets/clean` hanya berisi row yang valid untuk NLP.",
+                "- Instagram posts diperlakukan sebagai dataset shared, tidak diulang per batch.",
                 "- Kolom `batch_number` masih `test` karena belum masuk `batch_001`.",
                 "- Field yang memang tidak tersedia dari raw tetap tidak dipaksakan muncul.",
             ]
@@ -213,32 +148,42 @@ def main() -> None:
     instagram_posts = read_csv("data/processed/test/instagram_posts/instagram_posts.csv")
     instagram_comments = read_csv("data/processed/test/instagram_comments/instagram_comments.csv")
 
-    gmaps_reviews_final, gmaps_stats = build_gmaps_reviews(gmaps_reviews)
-    instagram_posts_final, posts_stats = build_instagram_posts(instagram_posts)
-    instagram_comments_final, comments_stats = build_instagram_comments(instagram_comments)
+    gmaps_reviews_all, gmaps_reviews_clean, gmaps_stats = append_text_audit(gmaps_reviews, "review_text", "text")
+    instagram_posts_all, instagram_posts_clean, posts_stats = append_text_audit(instagram_posts, "caption", "caption")
+    instagram_comments_all, instagram_comments_clean, comments_stats = append_text_audit(instagram_comments, "comment_text", "text")
 
     write_csv(
-        "data/final/test/gmaps_reviews_final.csv",
-        list(gmaps_reviews_final[0].keys()) if gmaps_reviews_final else [],
-        gmaps_reviews_final,
+        "data/datasets/all/test/gmaps_reviews_all.csv",
+        list(gmaps_reviews_all[0].keys()) if gmaps_reviews_all else [],
+        gmaps_reviews_all,
     )
     write_csv(
-        "data/final/test/gmaps_reviewers_final.csv",
-        list(gmaps_reviewers[0].keys()) if gmaps_reviewers else [],
-        gmaps_reviewers,
+        "data/datasets/clean/test/gmaps_reviews_clean.csv",
+        list(gmaps_reviews_clean[0].keys()) if gmaps_reviews_clean else [],
+        gmaps_reviews_clean,
     )
     write_csv(
-        "data/final/test/instagram_posts_final.csv",
-        list(instagram_posts_final[0].keys()) if instagram_posts_final else [],
-        instagram_posts_final,
+        "data/datasets/all/shared/instagram_posts_all.csv",
+        list(instagram_posts_all[0].keys()) if instagram_posts_all else [],
+        instagram_posts_all,
     )
     write_csv(
-        "data/final/test/instagram_comments_final.csv",
-        list(instagram_comments_final[0].keys()) if instagram_comments_final else [],
-        instagram_comments_final,
+        "data/datasets/clean/shared/instagram_posts_clean.csv",
+        list(instagram_posts_clean[0].keys()) if instagram_posts_clean else [],
+        instagram_posts_clean,
+    )
+    write_csv(
+        "data/datasets/all/test/instagram_comments_all.csv",
+        list(instagram_comments_all[0].keys()) if instagram_comments_all else [],
+        instagram_comments_all,
+    )
+    write_csv(
+        "data/datasets/clean/test/instagram_comments_clean.csv",
+        list(instagram_comments_clean[0].keys()) if instagram_comments_clean else [],
+        instagram_comments_clean,
     )
 
-    batch_rows = build_batch_rows(gmaps_stats, posts_stats, comments_stats)
+    batch_rows = build_batch_rows(gmaps_stats, comments_stats)
     write_csv(
         "data/final/test/scraping_batches_test.csv",
         list(batch_rows[0].keys()) if batch_rows else [],
@@ -246,7 +191,7 @@ def main() -> None:
     )
     write_summary("data/final/test/final_test_summary.md", gmaps_stats, posts_stats, comments_stats)
 
-    print("[finalize] saved final test datasets under data/final/test")
+    print("[finalize] saved shared instagram posts, test datasets, and summaries")
 
 
 if __name__ == "__main__":
