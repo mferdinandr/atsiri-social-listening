@@ -11,43 +11,57 @@ Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 ├── pyproject.toml
 ├── data/
 │   ├── raw/
-│   │   ├── input/
-│   │   └── output/
+│   │   ├── google_maps/
+│   │   ├── instagram_posts/
+│   │   └── instagram_comments/
 │   ├── processed/
 │   └── final/
 └── scripts/
+    ├── apify/
+    ├── google_maps/
+    ├── instagram_posts/
+    └── instagram_comments/
 ```
 
 ## Tujuan tiap folder
 
-- `data/raw/input/`: file input actor, template JSON, dan daftar URL
-- `data/raw/output/`: hasil export mentah dari Apify
+- `data/raw/google_maps/`: input dan output raw Google Maps
+- `data/raw/instagram_posts/`: input test, output test, dan aset reusable semua post Instagram
+- `data/raw/instagram_comments/`: input dan output raw komentar Instagram
 - `data/processed/`: disiapkan untuk tahap berikutnya
 - `data/final/`: disiapkan untuk tahap berikutnya
-- `scripts/`: semua script kerja
+- `scripts/apify/`: helper umum untuk menjalankan actor Apify
+- `scripts/google_maps/`: script khusus Google Maps
+- `scripts/instagram_posts/`: script khusus pengambilan dan indexing post Instagram
+- `scripts/instagram_comments/`: script khusus seleksi URL post dan scraping komentar Instagram
 
-## Struktur batch
+## Struktur test
 
-Setiap batch sekarang dipisah ke area `input` dan `output`, lalu dikelompokkan lagi per source.
+Fase sekarang memakai folder `test`. Folder `batch_xxx` baru dipakai nanti setelah mini test lolos validasi.
 
 Contoh:
 
-- `data/raw/input/google_maps/batch_001/README.txt`
-- `data/raw/input/google_maps/batch_001/gmaps_input.json`
-- `data/raw/output/google_maps/batch_001/gmaps_output.json`
-- `data/raw/output/google_maps/batch_001/gmaps_run.json`
-- `data/raw/input/instagram/batch_001/ig_posts_input.json`
-- `data/raw/input/instagram/batch_001/ig_comments_input.json`
-- `data/raw/input/instagram/batch_001/ig_comments_input.generated.json`
-- `data/raw/input/instagram/batch_001/comment_post_urls.txt`
-- `data/raw/output/instagram/batch_001/ig_posts_output.json`
-- `data/raw/output/instagram/batch_001/ig_comments_output.json`
+- `data/raw/google_maps/test/README.txt`
+- `data/raw/google_maps/test/gmaps_input.json`
+- `data/raw/google_maps/test/gmaps_output.json`
+- `data/raw/google_maps/test/gmaps_output_run.json`
+- `data/raw/instagram_posts/test/ig_posts_input.json`
+- `data/raw/instagram_posts/all_posts/ig_posts_output.json`
+- `data/raw/instagram_posts/all_posts/ig_posts_output_run.json`
+- `data/raw/instagram_posts/all_posts/ig_post_index.json`
+- `data/raw/instagram_posts/all_posts/ig_all_post_urls.txt`
+- `data/raw/instagram_comments/test/README.txt`
+- `data/raw/instagram_comments/test/ig_comments_input.json`
+- `data/raw/instagram_comments/test/ig_comments_input.generated.json`
+- `data/raw/instagram_comments/test/comment_post_urls.txt`
+- `data/raw/instagram_comments/test/ig_comments_output.json`
+- `data/raw/instagram_comments/test/ig_comments_output_run.json`
 
 ## Tool
 
 - Scraping: `Apify`
 - Processing: `Python 3.11+`
-- Automation: `scripts/run_apify_actor.py`
+- Automation: `scripts/apify/run_actor.py`
 
 ## Install
 
@@ -87,71 +101,83 @@ Instagram `shu8hvrXbJbY3Eb9W`:
 
 ## Langkah kerja
 
-1. Buat folder batch:
+1. Buat folder test:
 
 ```bash
-python3 scripts/init_batch.py --source google_maps --batch 1
-python3 scripts/init_batch.py --source instagram --batch 1
+python3 scripts/google_maps/init_test.py
+python3 scripts/instagram_posts/init_test.py
+python3 scripts/instagram_comments/init_test.py
 ```
 
 2. Jalankan mini test Google Maps via API Apify:
 
 Edit dulu file:
 
-- `data/raw/input/google_maps/batch_001/gmaps_input.json`
+- `data/raw/google_maps/test/gmaps_input.json`
 
 Default mini test sekarang memakai `startUrls` ke halaman Rumah Atsiri, review dari `google`, dan reviewer personal data aktif.
 
 Lalu jalankan:
 
 ```bash
-python3 scripts/run_apify_actor.py \
+python3 scripts/apify/run_actor.py \
   --actor-id Xb8osYTtOjlsgI6k9 \
-  --input data/raw/input/google_maps/batch_001/gmaps_input.json \
-  --output data/raw/output/google_maps/batch_001/gmaps_output.json
+  --input data/raw/google_maps/test/gmaps_input.json \
+  --output data/raw/google_maps/test/gmaps_output.json
 ```
 
 3. Untuk Instagram posts, isi dulu:
 
-- `data/raw/input/instagram/batch_001/ig_posts_input.json`
+- `data/raw/instagram_posts/test/ig_posts_input.json`
 
-Default mini test sekarang memakai URL profil `https://www.instagram.com/rumahatsiri/` dengan `resultsType: "posts"`.
+Default sekarang memakai URL profil `https://www.instagram.com/rumahatsiri/` dengan `resultsType: "posts"` dan `resultsLimit: 1500` agar bisa dipakai sebagai index master posts.
 
 Lalu jalankan:
 
 ```bash
-python3 scripts/run_apify_actor.py \
+python3 scripts/apify/run_actor.py \
   --actor-id shu8hvrXbJbY3Eb9W \
-  --input data/raw/input/instagram/batch_001/ig_posts_input.json \
-  --output data/raw/output/instagram/batch_001/ig_posts_output.json
+  --input data/raw/instagram_posts/test/ig_posts_input.json \
+  --output data/raw/instagram_posts/all_posts/ig_posts_output.json
 ```
 
-4. Kalau kamu sudah punya export post CSV, buat daftar URL post otomatis untuk comments:
+4. Setelah output post tersedia, bangun index post yang bisa dipakai ulang:
 
 ```bash
-python3 scripts/extract_instagram_post_urls.py \
-  --input /Users/user/Downloads/ig-post-scraper.csv \
-  --output-txt data/raw/input/instagram/batch_001/comment_post_urls.txt \
-  --output-json data/raw/input/instagram/batch_001/ig_comments_input.generated.json \
+python3 scripts/instagram_posts/build_post_index.py \
+  --input data/raw/instagram_posts/all_posts/ig_posts_output.json \
+  --output-json data/raw/instagram_posts/all_posts/ig_post_index.json \
+  --output-txt data/raw/instagram_posts/all_posts/ig_all_post_urls.txt
+```
+
+5. Dari output post atau index, buat daftar URL post untuk comments:
+
+```bash
+python3 scripts/instagram_comments/extract_post_urls.py \
+  --input data/raw/instagram_posts/all_posts/ig_post_index.json \
+  --output-txt data/raw/instagram_comments/test/comment_post_urls.txt \
+  --output-json data/raw/instagram_comments/test/ig_comments_input.generated.json \
   --limit 5 \
-  --min-comments 1
+  --min-comments 1 \
+  --sort-by-comments
 ```
 
 File JSON hasil generator akan otomatis memakai `resultsType: "comments"` agar sesuai schema actor comments.
 
-5. Jalankan comments actor:
+6. Jalankan comments actor:
 
 ```bash
-python3 scripts/run_apify_actor.py \
+python3 scripts/apify/run_actor.py \
   --actor-id shu8hvrXbJbY3Eb9W \
-  --input data/raw/input/instagram/batch_001/ig_comments_input.generated.json \
-  --output data/raw/output/instagram/batch_001/ig_comments_output.json
+  --input data/raw/instagram_comments/test/ig_comments_input.generated.json \
+  --output data/raw/instagram_comments/test/ig_comments_output.json
 ```
 
-6. Kalau kamu masih pakai file export manual dari dashboard, taruh hasil export mentah ke:
+7. Kalau kamu masih pakai file export manual dari dashboard, taruh hasil export mentah ke:
 
-- `data/raw/output/google_maps/batch_001/`
-- `data/raw/output/instagram/batch_001/`
+- `data/raw/google_maps/test/`
+- `data/raw/instagram_posts/test/`
+- `data/raw/instagram_comments/test/`
 
 ## Field realistis untuk mini test
 
@@ -171,7 +197,7 @@ python3 scripts/run_apify_actor.py \
 
 Fase sekarang fokus ke:
 
-- setup batch
+- setup test
 - run actor dari terminal
 - generate URL post untuk comments
 - simpan raw JSON mini test
@@ -180,5 +206,6 @@ Kalau mini test raw data sudah fix, baru kita tambahkan lagi script normalisasi 
 
 ## Ringkasan automation
 
-- `run_apify_actor.py`: menjalankan actor Apify dari terminal dan menyimpan hasil dataset ke JSON
-- `extract_instagram_post_urls.py`: mengambil `postUrl` dari hasil scrape post supaya comments bisa dijalankan batch tanpa copy-paste manual
+- `scripts/apify/run_actor.py`: menjalankan actor Apify dari terminal dan menyimpan hasil dataset ke JSON
+- `scripts/instagram_posts/build_post_index.py`: membuat manifest reusable semua post Instagram dari output actor
+- `scripts/instagram_comments/extract_post_urls.py`: mengambil `postUrl` dari hasil scrape post supaya comments bisa dijalankan batch tanpa copy-paste manual

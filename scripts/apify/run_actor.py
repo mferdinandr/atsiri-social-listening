@@ -129,7 +129,7 @@ def main() -> None:
         raise SystemExit("Actor run succeeded but defaultDatasetId is missing.")
 
     items = fetch_dataset_items(dataset_id, token)
-    ensure_parent(args.output).write_text(json.dumps(items, indent=2), encoding="utf-8")
+    ensure_parent(args.output).write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print(f"[apify] saved {len(items)} items to {args.output}")
     print(f"[apify] saved run metadata to {meta_output}")
