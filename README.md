@@ -1,4 +1,4 @@
-# Atsiri Data Mini Test
+# Atsiri Data Pipeline
 
 Struktur proyek ini saya sederhanakan khusus untuk tahap mini test.
 
@@ -238,9 +238,70 @@ Output normalisasi test:
 - `data/processed/test/instagram_posts/instagram_posts.csv`
 - `data/processed/test/instagram_comments/instagram_comments.csv`
 
+## Batch 1
+
+Setelah mini test lolos, `batch_001` dipakai sebagai batch validasi dosen.
+
+Asumsi batch awal yang dipakai sekarang:
+
+- Google Maps: `100` review terbaru
+- Instagram posts: memakai sumber reusable `all_posts`
+- Instagram comments: `10` post teratas yang memiliki komentar
+
+Inisialisasi batch:
+
+```bash
+python3 scripts/google_maps/init_batch.py --batch 1 --max-reviews 100
+python3 scripts/instagram_posts/init_batch.py --batch 1
+python3 scripts/instagram_comments/init_batch.py --batch 1 --results-limit 30
+python3 scripts/instagram_comments/prepare_batch.py --batch 1 --limit 10 --min-comments 1 --results-limit 30
+```
+
+Run actor:
+
+```bash
+python3 scripts/apify/run_actor.py \
+  --actor-id Xb8osYTtOjlsgI6k9 \
+  --input data/raw/google_maps/batch_001/gmaps_input.json \
+  --output data/raw/google_maps/batch_001/gmaps_output.json
+```
+
+```bash
+python3 scripts/apify/run_actor.py \
+  --actor-id shu8hvrXbJbY3Eb9W \
+  --input data/raw/instagram_comments/batch_001/ig_comments_input.generated.json \
+  --output data/raw/instagram_comments/batch_001/ig_comments_output.json
+```
+
+Normalisasi batch:
+
+```bash
+python3 scripts/normalize/batch_001.py
+```
+
+Finalisasi batch:
+
+```bash
+python3 scripts/finalize/build_batch_final.py --batch-number batch_001
+```
+
+Output akhir batch:
+
+- `data/processed/batch_001/google_maps/gmaps_reviews.csv`
+- `data/processed/batch_001/google_maps/gmaps_reviewers.csv`
+- `data/processed/batch_001/instagram_posts/instagram_posts.csv`
+- `data/processed/batch_001/instagram_comments/instagram_comments.csv`
+- `data/final/batch_001/gmaps_reviews_final.csv`
+- `data/final/batch_001/gmaps_reviewers_final.csv`
+- `data/final/batch_001/instagram_posts_final.csv`
+- `data/final/batch_001/instagram_comments_final.csv`
+- `data/final/batch_001/scraping_batches.csv`
+- `data/final/batch_001/summary.md`
+
 ## Ringkasan automation
 
 - `scripts/apify/run_actor.py`: menjalankan actor Apify dari terminal dan menyimpan hasil dataset ke JSON
 - `scripts/instagram_posts/build_post_index.py`: membuat manifest reusable semua post Instagram dari output actor
 - `scripts/instagram_comments/extract_post_urls.py`: mengambil `postUrl` dari hasil scrape post supaya comments bisa dijalankan batch tanpa copy-paste manual
+- `scripts/instagram_comments/prepare_batch.py`: membentuk input batch komentar dari index `all_posts`
 - `scripts/normalize/test_to_final.py`: menjalankan seluruh normalisasi raw test ke bentuk tabel final

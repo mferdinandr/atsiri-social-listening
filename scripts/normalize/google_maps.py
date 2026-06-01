@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import sys
@@ -38,6 +39,15 @@ REVIEWER_HEADERS = [
 ]
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Normalize Google Maps raw JSON into processed CSV tables.")
+    parser.add_argument("--raw-path", default="data/raw/google_maps/test/gmaps_output.json")
+    parser.add_argument("--reviews-output", default="data/processed/test/google_maps/gmaps_reviews.csv")
+    parser.add_argument("--reviewers-output", default="data/processed/test/google_maps/gmaps_reviewers.csv")
+    parser.add_argument("--batch-number", default="", help="Batch number label, e.g. batch_001")
+    return parser.parse_args()
+
+
 def write_csv(path: Path, headers: list[str], rows: list[dict[str, str | int]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -47,9 +57,10 @@ def write_csv(path: Path, headers: list[str], rows: list[dict[str, str | int]]) 
 
 
 def main() -> None:
-    raw_path = Path("data/raw/google_maps/test/gmaps_output.json")
-    reviews_output = Path("data/processed/test/google_maps/gmaps_reviews.csv")
-    reviewers_output = Path("data/processed/test/google_maps/gmaps_reviewers.csv")
+    args = parse_args()
+    raw_path = Path(args.raw_path)
+    reviews_output = Path(args.reviews_output)
+    reviewers_output = Path(args.reviewers_output)
 
     rows = json.loads(raw_path.read_text(encoding="utf-8"))
     normalized_at = now_iso()
@@ -71,7 +82,7 @@ def main() -> None:
                 "owner_response_date": parse_iso(row.get("responseFromOwnerDate")),
                 "review_url": str(row.get("reviewUrl") or ""),
                 "scraped_at": scraped_at,
-                "batch_number": "",
+                "batch_number": args.batch_number,
             }
         )
 
@@ -85,7 +96,7 @@ def main() -> None:
                 "is_local_guide": parse_bool(row.get("isLocalGuide")),
                 "reviewer_total_reviews": parse_int(row.get("reviewerNumberOfReviews")),
                 "scraped_at": scraped_at,
-                "batch_number": "",
+                "batch_number": args.batch_number,
             }
 
     write_csv(reviews_output, REVIEW_HEADERS, review_rows)

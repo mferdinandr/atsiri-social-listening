@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import sys
@@ -28,6 +29,14 @@ HEADERS = [
 ]
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Normalize Instagram posts raw JSON into processed CSV.")
+    parser.add_argument("--raw-path", default="data/raw/instagram_posts/all_posts/ig_posts_output.json")
+    parser.add_argument("--output-path", default="data/processed/test/instagram_posts/instagram_posts.csv")
+    parser.add_argument("--batch-number", default="", help="Batch number label, e.g. batch_001")
+    return parser.parse_args()
+
+
 def write_csv(path: Path, headers: list[str], rows: list[dict[str, str | int]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -37,8 +46,9 @@ def write_csv(path: Path, headers: list[str], rows: list[dict[str, str | int]]) 
 
 
 def main() -> None:
-    raw_path = Path("data/raw/instagram_posts/all_posts/ig_posts_output.json")
-    output_path = Path("data/processed/test/instagram_posts/instagram_posts.csv")
+    args = parse_args()
+    raw_path = Path(args.raw_path)
+    output_path = Path(args.output_path)
 
     rows = json.loads(raw_path.read_text(encoding="utf-8"))
     normalized_at = now_iso()
@@ -73,7 +83,7 @@ def main() -> None:
                 "hashtag_list": serialize_list([str(item) for item in hashtags]),
                 "mention_list": serialize_list([str(item) for item in mentions]),
                 "scraped_at": normalized_at,
-                "batch_number": "",
+                "batch_number": args.batch_number,
             }
         )
 
