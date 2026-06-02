@@ -38,6 +38,28 @@ def read_ids(path: str, key: str) -> set[str]:
         }
 
 
+def find_previous_batch_paths(current_batch: str, relative_path: str) -> list[Path]:
+    try:
+        current_num = int(current_batch.split("_")[-1])
+    except ValueError:
+        return []
+    paths: list[Path] = []
+    base = Path(relative_path)
+    parent = base.parent.parent
+    file_name = base.name
+    for batch_dir in sorted(parent.glob("batch_*")):
+        try:
+            batch_num = int(batch_dir.name.split("_")[-1])
+        except ValueError:
+            continue
+        if batch_num >= current_num:
+            continue
+        candidate = batch_dir / file_name
+        if candidate.exists():
+            paths.append(candidate)
+    return paths
+
+
 def append_text_audit(rows: list[dict[str, str]], text_key: str, mode: str) -> tuple[list[dict[str, str | int]], list[dict[str, str | int]], dict[str, int]]:
     output_all: list[dict[str, str | int]] = []
     output_clean: list[dict[str, str | int]] = []
@@ -102,49 +124,75 @@ def main() -> None:
 
     gmaps_reviews = read_csv(f"data/processed/{batch}/google_maps/gmaps_reviews.csv")
     gmaps_reviewers = read_csv(f"data/processed/{batch}/google_maps/gmaps_reviewers.csv")
-    instagram_comments = read_csv(f"data/processed/{batch}/instagram_comments/instagram_comments.csv")
+    comments_path = Path(f"data/processed/{batch}/instagram_comments/instagram_comments.csv")
+    instagram_comments = read_csv(str(comments_path)) if comments_path.exists() else []
 
     prev_gmaps_ids: set[str] = set()
     prev_comment_ids: set[str] = set()
-    if prev_batch:
-        prev_gmaps_path = Path(f"data/datasets/all/{prev_batch}/gmaps_reviews_all.csv")
-        if not prev_gmaps_path.exists():
-            prev_gmaps_path = Path(f"data/final/{prev_batch}/gmaps_reviews_final.csv")
-        prev_comments_path = Path(f"data/datasets/all/{prev_batch}/instagram_comments_all.csv")
-        if not prev_comments_path.exists():
-            prev_comments_path = Path(f"data/final/{prev_batch}/instagram_comments_final.csv")
+    gmaps_prev_paths = find_previous_batch_paths(batch, f"data/datasets/all/{batch}/gmaps_reviews_all.csv")
+    comments_prev_paths = find_previous_batch_paths(batch, f"data/datasets/all/{batch}/instagram_comments_all.csv")
 
-        prev_gmaps_ids = read_ids(str(prev_gmaps_path), "review_id")
-        prev_comment_ids = read_ids(str(prev_comments_path), "comment_id")
-        if prev_gmaps_ids:
-            gmaps_reviews = [row for row in gmaps_reviews if row.get("review_id", "") not in prev_gmaps_ids]
-            gmaps_reviewers = [row for row in gmaps_reviewers if row.get("reviewer_id", "") in {r.get("reviewer_id", "") for r in gmaps_reviews}]
-        if prev_comment_ids:
-            instagram_comments = [row for row in instagram_comments if row.get("comment_id", "") not in prev_comment_ids]
+    if prev_batch:
+        explicit_gmaps_path = Path(f"data/datasets/all/{prev_batch}/gmaps_reviews_all.csv")
+        explicit_comments_path = Path(f"data/datasets/all/{prev_batch}/instagram_comments_all.csv")
+        if explicit_gmaps_path.exists() and explicit_gmaps_path not in gmaps_prev_paths:
+            gmaps_prev_paths.append(explicit_gmaps_path)
+        if explicit_comments_path.exists() and explicit_comments_path not in comments_prev_paths:
+            comments_prev_paths.append(explicit_comments_path)
+
+    for prev_path in gmaps_prev_paths:
+        prev_gmaps_ids.update(read_ids(str(prev_path), "review_id"))
+    for prev_path in comments_prev_paths:
+        prev_comment_ids.update(read_ids(str(prev_path), "comment_id"))
+
+    if prev_gmaps_ids:
+        gmaps_reviews = [row for row in gmaps_reviews if row.get("review_id", "") not in prev_gmaps_ids]
+        current_reviewer_ids = {r.get("reviewer_id", "") for r in gmaps_reviews if r.get("reviewer_id", "")}
+        gmaps_reviewers = [row for row in gmaps_reviewers if row.get("reviewer_id", "") in current_reviewer_ids]
+    if prev_comment_ids and instagram_comments:
+        instagram_comments = [row for row in instagram_comments if row.get("comment_id", "") not in prev_comment_ids]
 
     gmaps_reviews_all, gmaps_reviews_clean, gmaps_stats = append_text_audit(gmaps_reviews, "review_text", "text")
-    instagram_comments_all, instagram_comments_clean, comments_stats = append_text_audit(instagram_comments, "comment_text", "text")
+    instagram_comments_all: list[dict[str, str | int]] = []
+    instagram_comments_clean: list[dict[str, str | int]] = []
+    comments_stats = {
+        "raw_count": 0,
+        "clean_count": 0,
+        "duplicate_count": 0,
+        "empty_text_count": 0,
+        "invalid_text_count": 0,
+    }
+    if instagram_comments:
+        instagram_comments_all, instagram_comments_clean, comments_stats = append_text_audit(instagram_comments, "comment_text", "text")
 
     write_csv(
         f"data/datasets/all/{batch}/gmaps_reviews_all.csv",
         list(gmaps_reviews_all[0].keys()) if gmaps_reviews_all else [],
         gmaps_reviews_all,
     )
+    if gmaps_reviewers:
+        write_csv(
+            f"data/datasets/all/{batch}/gmaps_reviewers_all.csv",
+            list(gmaps_reviewers[0].keys()),
+            gmaps_reviewers,
+        )
     write_csv(
         f"data/datasets/clean/{batch}/gmaps_reviews_clean.csv",
         list(gmaps_reviews_clean[0].keys()) if gmaps_reviews_clean else [],
         gmaps_reviews_clean,
     )
-    write_csv(
-        f"data/datasets/all/{batch}/instagram_comments_all.csv",
-        list(instagram_comments_all[0].keys()) if instagram_comments_all else [],
-        instagram_comments_all,
-    )
-    write_csv(
-        f"data/datasets/clean/{batch}/instagram_comments_clean.csv",
-        list(instagram_comments_clean[0].keys()) if instagram_comments_clean else [],
-        instagram_comments_clean,
-    )
+    if instagram_comments_all:
+        write_csv(
+            f"data/datasets/all/{batch}/instagram_comments_all.csv",
+            list(instagram_comments_all[0].keys()),
+            instagram_comments_all,
+        )
+    if instagram_comments_clean:
+        write_csv(
+            f"data/datasets/clean/{batch}/instagram_comments_clean.csv",
+            list(instagram_comments_clean[0].keys()),
+            instagram_comments_clean,
+        )
 
     batch_rows = [
         {
@@ -157,17 +205,20 @@ def main() -> None:
             "status": "completed",
             "notes": "Batch Google Maps validation",
         },
-        {
-            "batch_number": batch,
-            "source": "instagram",
-            "target_data": "instagram_comments",
-            "started_at": "",
-            "finished_at": "",
-            **comments_stats,
-            "status": "completed",
-            "notes": "Batch Instagram comments validation",
-        },
     ]
+    if instagram_comments:
+        batch_rows.append(
+            {
+                "batch_number": batch,
+                "source": "instagram",
+                "target_data": "instagram_comments",
+                "started_at": "",
+                "finished_at": "",
+                **comments_stats,
+                "status": "completed",
+                "notes": "Batch Instagram comments validation",
+            }
+        )
     write_csv(
         f"data/final/{batch}/scraping_batches.csv",
         list(batch_rows[0].keys()),
@@ -184,10 +235,12 @@ def main() -> None:
                 "## Ringkasan",
                 f"- Google Maps reviews raw: {gmaps_stats['raw_count']}",
                 f"- Google Maps reviews clean valid: {gmaps_stats['clean_count']}",
-                f"- Instagram comments raw: {comments_stats['raw_count']}",
-                f"- Instagram comments clean valid: {comments_stats['clean_count']}",
+                f"- Google Maps reviewers unique: {len(gmaps_reviewers)}",
+                f"- Instagram comments raw: {comments_stats['raw_count']}" if instagram_comments else "- Instagram comments raw: batch ini tidak mengambil comments",
+                f"- Instagram comments clean valid: {comments_stats['clean_count']}" if instagram_comments else "- Instagram comments clean valid: batch ini tidak mengambil comments",
                 "",
                 "## File utama",
+                "- `gmaps_reviewers_all.csv` menyimpan tabel reviewer publik Google Maps hasil normalisasi.",
                 "- Instagram posts gunakan dataset shared, bukan file per batch.",
                 "- Gunakan folder `data/datasets/all` untuk arsip semua hasil scrape.",
                 "- Gunakan folder `data/datasets/clean` untuk analisis NLP dan pelaporan data bersih.",

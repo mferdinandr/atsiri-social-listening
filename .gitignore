@@ -6,7 +6,9 @@ __pycache__/
 .pytest_cache/
 data/raw/**/*
 !data/raw/**/.gitkeep
+data/archive/**/*
 data/processed/**/*
 !data/processed/.gitkeep
+data/datasets/**/*
 data/final/**/*
 !data/final/.gitkeep
