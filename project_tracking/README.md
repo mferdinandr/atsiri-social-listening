@@ -10,6 +10,8 @@ Folder ini dipakai sebagai pusat dokumentasi hasil per tahap agar progres proyek
    Ringkasan strategi dan hasil scraping yang benar-benar dijalankan.
 3. `03_theme_discovery_summary.md`
    Ringkasan eksplorasi tema data-driven dari post Atsiri.
+4. `04_codebook_v1_summary.md`
+   Ringkasan penguncian codebook tema final v1.
 
 ## Catatan
 

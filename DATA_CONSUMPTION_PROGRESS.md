@@ -9,6 +9,7 @@ Folder ringkasan per tahap sekarang ada di:
 - `project_tracking/01_data_collection_summary.md`
 - `project_tracking/02_scraping_execution_summary.md`
 - `project_tracking/03_theme_discovery_summary.md`
+- `project_tracking/04_codebook_v1_summary.md`
 
 ## Status Data Saat Ini
 
@@ -142,7 +143,6 @@ Eksplorasi data-driven untuk post Atsiri **sudah dilakukan** dan output-nya ada 
 - `glamping_stay`
 - `destination_tourism`
 - `event_campaign`
-- `architecture_landscape`
 
 ### Hasil review kandidat saat ini
 - `aromatic_products` → `keep`
@@ -153,13 +153,13 @@ Eksplorasi data-driven untuk post Atsiri **sudah dilakukan** dan output-nya ada 
 - `glamping_stay` → `keep`
 - `destination_tourism` → `refine`
 - `event_campaign` → `refine`
-- `architecture_landscape` → `merge` ke `destination_tourism`
+- sinyal `architecture_landscape` → `merge` ke `destination_tourism`
 
 ### Arah keputusan sementara
 - `aromatic_products` dan `wellness_experience` **tidak digabung dulu**
 - `wellness_experience` harus diperketat agar hashtag slogan tidak otomatis melabeli tema
 - `destination_tourism` dipertahankan dengan definisi sempit
-- `architecture_landscape` tidak dipakai sebagai tema mandiri
+- sinyal `architecture_landscape` tidak dipakai sebagai tema mandiri
 
 ### Paket yang siap dikirim ke dosen
 - `atsiri_theme_summary_for_dosen.md` sebagai ringkasan utama
@@ -167,6 +167,26 @@ Eksplorasi data-driven untuk post Atsiri **sudah dilakukan** dan output-nya ada 
 - `atsiri_theme_candidates.csv` sebagai detail kandidat tema
 - `atsiri_post_theme_mapping_full.csv` sebagai bukti mapping per post
 - `atsiri_theme_period_summary.csv` sebagai ringkasan per periode
+
+## Status Codebook Final V1
+
+Codebook final v1 untuk tema Atsiri **sudah disusun** dan output-nya ada di:
+- `data/final/theme_discovery/atsiri_theme_codebook_v1.csv`
+- `data/final/theme_discovery/atsiri_theme_codebook_v1.md`
+
+Tema final v1 yang dipakai:
+- `aromatic_products`
+- `plants_garden`
+- `museum_education`
+- `wellness_experience`
+- `culinary_resto`
+- `glamping_stay`
+- `destination_tourism`
+- `event_campaign`
+
+Catatan:
+- sinyal `architecture_landscape` tidak dipakai sebagai tema mandiri
+- diarahkan masuk ke `destination_tourism`
 
 ## Catatan Penting
 

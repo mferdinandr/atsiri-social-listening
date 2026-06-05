@@ -32,9 +32,8 @@ Dokumen ini merangkum eksplorasi tema secara data-driven dari seluruh caption da
 | Wellness and Signature Experience | 1176 | Dipertahankan, tetapi perlu diperketat agar hashtag slogan tidak otomatis melabeli tema. |
 | Culinary and Resto | 355 | Dipertahankan sebagai tema kuliner/resto. |
 | Glamping and Stay | 232 | Dipertahankan sebagai tema menginap/glamping. |
-| Destination and Tourism | 336 | Dipertahankan dengan definisi sempit sebagai framing destinasi/kunjungan. |
+| Destination and Tourism | 422 | Dipertahankan dengan definisi sempit sebagai framing destinasi/kunjungan, termasuk sinyal arsitektur/landscape tempat. |
 | Event, Campaign, and Community | 246 | Dipertahankan sebagai tema sekunder dan perlu keyword yang lebih ketat. |
-| Architecture and Landscape | 128 | Tidak dipakai sebagai tema mandiri; diarahkan untuk digabung ke `destination_tourism`. |
 
 ## Posisi Sementara Hasil Diskusi
 
@@ -42,7 +41,7 @@ Dokumen ini merangkum eksplorasi tema secara data-driven dari seluruh caption da
 - `wellness_experience` dipertahankan sebagai tema mandiri, tetapi harus diperketat
 - `aromatic_products` dan `wellness_experience` tidak digabung dulu
 - `destination_tourism` tetap dipakai
-- `architecture_landscape` tidak dipakai sebagai tema mandiri dan akan digabung ke `destination_tourism`
+- sinyal `architecture_landscape` tidak dipakai sebagai tema mandiri dan sudah digabung ke `destination_tourism`
 
 ## File Pendukung
 
