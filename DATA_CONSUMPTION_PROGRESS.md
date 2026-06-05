@@ -18,6 +18,10 @@ Folder ringkasan per tahap sekarang ada di:
 - `project_tracking/10_gmaps_negative_aspect_mapping_summary.md`
 - `project_tracking/11_gmaps_negative_aspect_visualization_summary.md`
 - `project_tracking/12_gmaps_negative_signal_lexicon_summary.md`
+- `project_tracking/13_instagram_comments_theme_mapping_summary.md`
+- `project_tracking/14_instagram_comments_theme_visualization_summary.md`
+- `project_tracking/15_instagram_negative_aspect_mapping_summary.md`
+- `project_tracking/16_instagram_negative_aspect_visualization_summary.md`
 
 ## Status Data Saat Ini
 
@@ -265,6 +269,73 @@ Catatan tambahan:
 - negative aspect kini memakai lexicon terpisah yang bisa diaudit dan diedit
 - `gmaps_negative_aspect_theme_mapping.csv` sekarang memuat `negative_strength` dan `negative_signal_groups`
 - false positive `destination_tourism` dari nama lokasi generik pada clause resto sudah dikurangi
+
+## Status Mapping Tema Instagram Comments
+
+Mapping codebook v1 ke Instagram comments **sudah dijalankan** dan output-nya ada di:
+- `data/final/theme_mapping/instagram_comments/instagram_comment_theme_mapping.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_comment_theme_overall_summary.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_comment_theme_period_summary.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_comment_mapping_audit.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_comment_mapping_audit.md`
+- `data/final/theme_mapping/instagram_comments/summary.md`
+
+Ringkasan hasil:
+- clean comments: `3585`
+- matched comments: `563`
+- unmatched comments: `3022`
+- mapping rows: `668`
+- multi-theme comments: `83`
+- max themes per comment: `5`
+- average themes per matched comment: `1.19`
+
+Tema comments teratas:
+- `aromatic_products`: `214`
+- `glamping_stay`: `104`
+- `destination_tourism`: `101`
+- `museum_education`: `93`
+- `plants_garden`: `60`
+
+## Status Visualisasi Instagram Comments
+
+Visualisasi hasil mapping tema Instagram comments **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/instagram_comments/figures/fig_14_instagram_comments_theme_distribution_overall.svg`
+- `data/final/theme_mapping/instagram_comments/figures/fig_15_instagram_comments_theme_distribution_by_period.svg`
+- `data/final/theme_mapping/instagram_comments/figures/fig_16_instagram_comments_mapping_audit.svg`
+- `data/final/theme_mapping/instagram_comments/instagram_comments_theme_visuals_summary.md`
+
+## Status Negative Aspect Instagram Comments
+
+Deteksi dan mapping negative aspect Instagram comments **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/instagram_comments/instagram_negative_signal_lexicon.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_signal_lexicon.md`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_aspect_theme_mapping.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_aspects_by_theme.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_aspect_audit.csv`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_aspect_theme_mapping.md`
+
+Ringkasan hasil:
+- negative comments detected: `19`
+- negative clauses detected: `20`
+- negative clauses matched to theme: `6`
+- negative clauses unmatched: `14`
+- negative clause x theme mapping rows: `6`
+
+Tema negative comments yang terdeteksi:
+- `aromatic_products`: `5`
+- `culinary_resto`: `1`
+
+Catatan tambahan:
+- baseline negative comments dibuat konservatif karena comments sangat pendek dan mudah noisy
+- lexicon Instagram comments dipisah dari Google Maps dan diperketat untuk mengurangi false positive dari slang atau konteks bercanda
+
+## Status Visualisasi Negative Aspect Instagram Comments
+
+Visualisasi negative aspect Instagram comments **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/instagram_comments/figures/fig_17_instagram_negative_aspects_overall.svg`
+- `data/final/theme_mapping/instagram_comments/figures/fig_18_instagram_negative_aspects_by_period.svg`
+- `data/final/theme_mapping/instagram_comments/figures/fig_19_instagram_negative_aspect_audit.svg`
+- `data/final/theme_mapping/instagram_comments/instagram_negative_aspect_visuals_summary.md`
 
 ## Status Visualisasi Negative Aspect Google Maps
 

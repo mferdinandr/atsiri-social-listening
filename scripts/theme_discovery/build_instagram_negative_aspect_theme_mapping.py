@@ -7,18 +7,16 @@ from pathlib import Path
 from map_gmaps_reviews_to_themes import (
     keyword_hits,
     load_codebook,
-    load_reviewers,
     normalize_text,
-    reviewer_bucket,
     split_pipe,
     year_bucket,
 )
 
 
 ROOT = Path("data")
-REVIEWS_PATH = ROOT / "datasets" / "clean" / "consolidated" / "gmaps_reviews_clean.csv"
-OUTPUT_DIR = ROOT / "final" / "theme_mapping" / "google_maps"
-NEGATIVE_LEXICON_PATH = OUTPUT_DIR / "gmaps_negative_signal_lexicon.csv"
+COMMENTS_PATH = ROOT / "datasets" / "clean" / "consolidated" / "instagram_comments_clean.csv"
+OUTPUT_DIR = ROOT / "final" / "theme_mapping" / "instagram_comments"
+NEGATIVE_LEXICON_PATH = OUTPUT_DIR / "instagram_negative_signal_lexicon.csv"
 
 CLAUSE_SPLIT_PATTERN = re.compile(
     r"(?:\n+|[.!?]+|\u2705|;|,\s+tapi\s+|,\s+namun\s+|,\s+sayangnya\s+|\s+but\s+|\s+however\s+)",
@@ -26,20 +24,21 @@ CLAUSE_SPLIT_PATTERN = re.compile(
 )
 
 NEGATIVE_THEME_EXTRA_KEYWORDS = {
-    "culinary_resto": ["restaurant", "restoran", "food", "makan", "fish and chips", "sarapan", "kantin", "kopi"],
-    "museum_education": ["guide", "pemandu", "tour guide"],
-    "plants_garden": ["kebun", "aromatic garden", "kolam"],
+    "culinary_resto": ["restaurant", "restoran", "food", "makan", "kantin", "kopi", "menu"],
+    "museum_education": ["guide", "pemandu", "tour guide", "kelas"],
+    "plants_garden": ["kebun", "aromatic garden", "taman"],
     "destination_tourism": ["parkir", "akses", "jalan", "lokasi"],
-    "aromatic_products": ["goods", "store", "toiletries"],
+    "aromatic_products": ["goods", "store", "toiletries", "stok", "tokped", "shopee"],
     "glamping_stay": ["nginap"],
 }
 
 NEGATIVE_THEME_STRONG_TERMS = {
     "aromatic_products": {
-        "essential oil", "essential oils", "minyak atsiri", "produk", "parfum", "diffuser", "fragrance", "blend", "shop", "goods", "store", "toiletries",
+        "essential oil", "essential oils", "minyak atsiri", "produk", "parfum", "diffuser", "fragrance", "blend", "shop",
+        "goods", "store", "toiletries", "stok", "tokped", "shopee", "wangi", "wangi nya", "wanginya",
     },
     "plants_garden": {
-        "tanaman", "bunga", "garden", "taman", "citronella", "plants", "aromatic garden", "botanical", "kebun", "kolam",
+        "tanaman", "bunga", "garden", "taman", "citronella", "plants", "aromatic garden", "botanical", "kebun",
     },
     "museum_education": {
         "museum", "workshop", "class", "kelas", "tur", "factory", "pabrik", "knowledge", "edukasi", "belajar", "guide", "pemandu", "tour guide",
@@ -48,13 +47,13 @@ NEGATIVE_THEME_STRONG_TERMS = {
         "wellness", "healing", "relax", "self care", "restore", "ritual", "calm", "aromatic wellness", "slow rhythm",
     },
     "culinary_resto": {
-        "resto", "restaurant", "restoran", "recipe", "menu", "tea", "kuliner", "makanan", "minuman", "coffee", "lunch", "dinner", "food", "makan", "sarapan", "kantin", "kopi", "fish and chips",
+        "resto", "restaurant", "restoran", "recipe", "menu", "tea", "kuliner", "makanan", "minuman", "coffee", "food", "makan", "kopi",
     },
     "glamping_stay": {
         "glamping", "stay", "cabin", "camp", "room", "menginap", "staycation", "nginap",
     },
     "destination_tourism": {
-        "wisata", "destination", "travel", "trip", "parkir", "akses", "jalan", "lokasi",
+        "wisata", "destination", "parkir", "akses", "jalan", "lokasi", "tawangmangu", "karanganyar", "rumah atsiri",
     },
     "event_campaign": {
         "event", "promo", "campaign", "community", "playlist", "coming soon", "launch", "ramadan",
@@ -100,10 +99,9 @@ def negative_hit_rows(text: str, lexicon_rows: list[dict[str, str]]) -> list[dic
             continue
         pattern = r"(?<![a-z0-9])" + re.escape(signal) + r"(?![a-z0-9])"
         if re.search(pattern, normalized):
+            if signal == "mahal" and any(phrase in normalized for phrase in ("tidak harus mahal", "ga mahal", "gak mahal", "ngga mahal", "nggak mahal")):
+                continue
             hits.append(row)
-    # `tidk`/`tdk` are noisy; keep only when no stronger indicator exists
-    if hits and any(row["signal_text"] not in {"tidk", "tdk"} for row in hits):
-        hits = [row for row in hits if row["signal_text"] not in {"tidk", "tdk"}]
     return hits
 
 
@@ -126,37 +124,30 @@ def negative_clause_theme_hits(theme_code: str, clause_text: str, base_keywords:
 
 
 def main() -> None:
-    reviews = read_csv_rows(REVIEWS_PATH)
-    reviewers = load_reviewers()
+    comments = read_csv_rows(COMMENTS_PATH)
     codebook = load_codebook()
     negative_lexicon_rows = load_negative_lexicon()
 
     mapping_rows: list[dict[str, str]] = []
     theme_counts: dict[str, int] = {theme["theme_code"]: 0 for theme in codebook}
-    negative_review_ids: set[str] = set()
+    negative_comment_ids: set[str] = set()
     negative_clause_ids: set[tuple[str, str]] = set()
     matched_negative_clause_ids: set[tuple[str, str]] = set()
 
-    for review in reviews:
-        rating = int(float(review["rating"])) if review.get("rating") else None
-        if rating is None or rating > 3:
-            continue
+    for comment in comments:
+        comment_id = comment.get("comment_id", "")
+        comment_text = comment.get("comment_text", "")
+        clean_text = comment.get("clean_text") or comment_text
+        time_bucket = year_bucket(comment.get("comment_date", ""))
 
-        review_id = review.get("review_id", "")
-        reviewer_id = review.get("reviewer_id", "")
-        reviewer = reviewers.get(reviewer_id, {})
-        time_bucket = year_bucket(review.get("review_date", ""))
-        bucket = reviewer_bucket(reviewer.get("reviewer_total_reviews", ""))
-        review_text = review.get("review_text", "")
-        clean_text = review.get("clean_text") or review_text
-
-        negative_review_ids.add(review_id)
         clauses = split_clauses(clean_text)
+        comment_has_negative_clause = False
         for idx, clause in enumerate(clauses, start=1):
-            clause_key = (review_id, str(idx))
+            clause_key = (comment_id, str(idx))
             neg_hit_rows = negative_hit_rows(clause, negative_lexicon_rows)
             if not neg_hit_rows:
                 continue
+            comment_has_negative_clause = True
             negative_clause_ids.add(clause_key)
             normalized_clause = normalize_text(clause)
             clause_strength = negative_strength(neg_hit_rows)
@@ -168,15 +159,15 @@ def main() -> None:
                 theme_counts[theme["theme_code"]] += 1
                 mapping_rows.append(
                     {
-                        "review_id": review_id,
-                        "clause_id": f"{review_id}__{idx}",
-                        "reviewer_id": reviewer_id,
-                        "review_date": review.get("review_date", ""),
+                        "comment_id": comment_id,
+                        "clause_id": f"{comment_id}__{idx}",
+                        "post_id": comment.get("post_id", ""),
+                        "post_url": comment.get("post_url", ""),
+                        "comment_date": comment.get("comment_date", ""),
                         "time_bucket": time_bucket,
-                        "rating": review.get("rating", ""),
-                        "reviewer_name": reviewer.get("reviewer_name", ""),
-                        "reviewer_total_reviews": reviewer.get("reviewer_total_reviews", ""),
-                        "reviewer_bucket": bucket,
+                        "commenter_username": comment.get("commenter_username", ""),
+                        "comment_like_count": comment.get("comment_like_count", ""),
+                        "batch_number": comment.get("batch_number", ""),
                         "theme_code": theme["theme_code"],
                         "theme_label": theme["theme_label"],
                         "negative_strength": clause_strength,
@@ -184,21 +175,23 @@ def main() -> None:
                         "negative_signal_groups": "|".join(dict.fromkeys(row.get("signal_group", "") for row in neg_hit_rows if row.get("signal_group"))),
                         "matched_keywords": "|".join(hits),
                         "negative_clause_text": clause,
-                        "review_text": review_text,
+                        "comment_text": comment_text,
                         "clean_text": clean_text,
                     }
                 )
+        if comment_has_negative_clause:
+            negative_comment_ids.add(comment_id)
 
     mapping_headers = [
-        "review_id",
+        "comment_id",
         "clause_id",
-        "reviewer_id",
-        "review_date",
+        "post_id",
+        "post_url",
+        "comment_date",
         "time_bucket",
-        "rating",
-        "reviewer_name",
-        "reviewer_total_reviews",
-        "reviewer_bucket",
+        "commenter_username",
+        "comment_like_count",
+        "batch_number",
         "theme_code",
         "theme_label",
         "negative_strength",
@@ -206,10 +199,10 @@ def main() -> None:
         "negative_signal_groups",
         "matched_keywords",
         "negative_clause_text",
-        "review_text",
+        "comment_text",
         "clean_text",
     ]
-    write_csv(OUTPUT_DIR / "gmaps_negative_aspect_theme_mapping.csv", mapping_headers, mapping_rows)
+    write_csv(OUTPUT_DIR / "instagram_negative_aspect_theme_mapping.csv", mapping_headers, mapping_rows)
 
     summary_rows: list[dict[str, str | int]] = []
     for theme in codebook:
@@ -222,40 +215,28 @@ def main() -> None:
         )
     summary_rows.sort(key=lambda row: int(row["matched_negative_clause_count"]), reverse=True)
     write_csv(
-        OUTPUT_DIR / "gmaps_negative_aspects_by_theme.csv",
+        OUTPUT_DIR / "instagram_negative_aspects_by_theme.csv",
         ["theme_code", "theme_label", "matched_negative_clause_count"],
         summary_rows,
     )
 
     negative_clause_unmatched = negative_clause_ids - matched_negative_clause_ids
     audit_rows = [
-        {"metric": "negative_reviews_rating_le_3", "value": len(negative_review_ids), "note": "Jumlah review negatif dengan rating <= 3"},
-        {"metric": "negative_clauses_detected", "value": len(negative_clause_ids), "note": "Jumlah clauses/kalimat negatif yang terdeteksi"},
-        {
-            "metric": "negative_clauses_matched_to_theme",
-            "value": len(matched_negative_clause_ids),
-            "note": "Jumlah clauses negatif yang berhasil dipetakan ke tema",
-        },
-        {
-            "metric": "negative_clauses_unmatched",
-            "value": len(negative_clause_unmatched),
-            "note": "Jumlah clauses negatif yang belum berhasil dipetakan ke tema",
-        },
-        {
-            "metric": "negative_aspect_mapping_rows",
-            "value": len(mapping_rows),
-            "note": "Jumlah total pasangan negative clause x tema",
-        },
+        {"metric": "negative_comments_detected", "value": len(negative_comment_ids), "note": "Jumlah comment yang memiliki minimal satu clause negatif"},
+        {"metric": "negative_clauses_detected", "value": len(negative_clause_ids), "note": "Jumlah clauses atau kalimat negatif yang terdeteksi"},
+        {"metric": "negative_clauses_matched_to_theme", "value": len(matched_negative_clause_ids), "note": "Jumlah clauses negatif yang berhasil dipetakan ke tema"},
+        {"metric": "negative_clauses_unmatched", "value": len(negative_clause_unmatched), "note": "Jumlah clauses negatif yang belum berhasil dipetakan ke tema"},
+        {"metric": "negative_aspect_mapping_rows", "value": len(mapping_rows), "note": "Jumlah total pasangan negative clause x tema"},
     ]
-    write_csv(OUTPUT_DIR / "gmaps_negative_aspect_audit.csv", ["metric", "value", "note"], audit_rows)
+    write_csv(OUTPUT_DIR / "instagram_negative_aspect_audit.csv", ["metric", "value", "note"], audit_rows)
 
     summary = "\n".join(
         [
-            "# Google Maps Negative Aspect Theme Mapping",
+            "# Instagram Negative Aspect Theme Mapping",
             "",
-            "Mapping ini memakai basis review negatif dengan definisi `rating <= 3`, lalu hanya memetakan kalimat atau clause yang mengandung sinyal keluhan.",
+            "Mapping ini hanya memetakan comment atau clause yang mengandung sinyal keluhan pada Instagram comments.",
             "",
-            f"- Negative reviews (`rating <= 3`): `{len(negative_review_ids)}`",
+            f"- Negative comments detected: `{len(negative_comment_ids)}`",
             f"- Negative clauses detected: `{len(negative_clause_ids)}`",
             f"- Negative clauses matched to theme: `{len(matched_negative_clause_ids)}`",
             f"- Negative clauses unmatched: `{len(negative_clause_unmatched)}`",
@@ -263,15 +244,14 @@ def main() -> None:
             "",
             "## Output",
             "",
-            "- `gmaps_negative_aspect_theme_mapping.csv`",
-            "- `gmaps_negative_aspects_by_theme.csv`",
-            "- `gmaps_negative_aspect_audit.csv`",
-            "- `gmaps_negative_signal_lexicon.csv`",
+            "- `instagram_negative_aspect_theme_mapping.csv`",
+            "- `instagram_negative_aspects_by_theme.csv`",
+            "- `instagram_negative_aspect_audit.csv`",
+            "- `instagram_negative_signal_lexicon.csv`",
         ]
     )
-    (OUTPUT_DIR / "gmaps_negative_aspect_theme_mapping.md").write_text(summary, encoding="utf-8")
-
-    print(f"[negative_aspect_mapping] saved negative aspect mapping under {OUTPUT_DIR}")
+    (OUTPUT_DIR / "instagram_negative_aspect_theme_mapping.md").write_text(summary, encoding="utf-8")
+    print(f"[negative_aspect_mapping] saved Instagram negative aspect mapping under {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":

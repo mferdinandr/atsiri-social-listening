@@ -28,6 +28,14 @@ Folder ini dipakai sebagai pusat dokumentasi hasil per tahap agar progres proyek
    Ringkasan visualisasi negative aspect Google Maps.
 12. `12_gmaps_negative_signal_lexicon_summary.md`
    Ringkasan kamus sinyal negatif dan severity rule untuk deteksi keluhan Google Maps.
+13. `13_instagram_comments_theme_mapping_summary.md`
+   Ringkasan hasil mapping tema ke Instagram comments.
+14. `14_instagram_comments_theme_visualization_summary.md`
+   Ringkasan visualisasi hasil mapping tema Instagram comments.
+15. `15_instagram_negative_aspect_mapping_summary.md`
+   Ringkasan deteksi dan mapping negative aspect pada Instagram comments.
+16. `16_instagram_negative_aspect_visualization_summary.md`
+   Ringkasan visualisasi negative aspect Instagram comments.
 
 ## Catatan
 
