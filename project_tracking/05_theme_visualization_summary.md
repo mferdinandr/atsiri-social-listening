@@ -2,6 +2,8 @@
 
 Dokumen ini merangkum visualisasi awal yang dibuat dari hasil theme discovery post Instagram Atsiri.
 
+Seluruh visual tahap ini sekarang sudah diregenerate menggunakan `matplotlib` dan `seaborn` agar lebih layak untuk kebutuhan paper.
+
 ## Tujuan Tahap Ini
 
 - Menyediakan visual yang mudah dibaca untuk diskusi dengan dosen.

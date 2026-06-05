@@ -1,17 +1,44 @@
 from __future__ import annotations
 
-import csv
+import os
 from pathlib import Path
-from xml.sax.saxutils import escape
+
+os.environ.setdefault("MPLCONFIGDIR", str(Path(".cache") / "matplotlib"))
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
 
 
 ROOT = Path("data") / "final" / "theme_discovery"
 FIGURES_DIR = ROOT / "figures"
-
-
-def read_csv_rows(path: Path) -> list[dict[str, str]]:
-    with path.open(encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle))
+PERIOD_ORDER = ["2016-2017", "2018-2019", "2020-2021", "2022-2023", "2024-2025", "2026"]
+THEME_ORDER = [
+    "Aromatic Products",
+    "Plants and Garden",
+    "Museum and Education",
+    "Wellness Experience",
+    "Culinary",
+    "Glamping",
+    "Destination",
+    "Event and Campaign",
+]
+PALETTE = ["#2E6F5E", "#4C956C", "#73A942", "#A7C957", "#FFC857", "#D95D39", "#8E5572", "#6C757D"]
+THEME_COLOR_MAP = {
+    "Aromatic Products": "#2E6F5E",
+    "Plants and Garden": "#6BA368",
+    "Museum and Education": "#3E7CB1",
+    "Wellness Experience": "#9C6ADE",
+    "Culinary": "#D97D54",
+    "Glamping": "#B08D57",
+    "Destination": "#4D908E",
+    "Event and Campaign": "#C06C84",
+}
 
 
 def sanitize_label(value: str) -> str:
@@ -27,184 +54,133 @@ def sanitize_label(value: str) -> str:
     )
 
 
-def svg_header(width: int, height: int) -> list[str]:
-    return [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        '<rect width="100%" height="100%" fill="white"/>',
-    ]
+def setup_theme() -> None:
+    sns.set_theme(style="whitegrid", context="talk")
+    plt.rcParams["font.family"] = "DejaVu Sans"
+    plt.rcParams["axes.titlesize"] = 18
+    plt.rcParams["axes.labelsize"] = 12
+    plt.rcParams["xtick.labelsize"] = 10
+    plt.rcParams["ytick.labelsize"] = 10
+    plt.rcParams["svg.fonttype"] = "none"
+    plt.rcParams["axes.facecolor"] = "#FCFCFA"
+    plt.rcParams["figure.facecolor"] = "white"
+    plt.rcParams["grid.color"] = "#D9D9D9"
+    plt.rcParams["grid.alpha"] = 0.45
 
 
-def svg_footer() -> list[str]:
-    return ["</svg>"]
-
-
-def save_svg(path: Path, lines: list[str]) -> None:
+def save_current_figure(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines), encoding="utf-8")
+    plt.tight_layout()
+    plt.savefig(path, format="svg", bbox_inches="tight")
+    plt.close()
 
 
-def add_text(lines: list[str], x: float, y: float, text: str, size: int = 12, weight: str = "normal", anchor: str = "start", fill: str = "#222") -> None:
-    lines.append(
-        f'<text x="{x}" y="{y}" font-family="Arial, Helvetica, sans-serif" font-size="{size}" font-weight="{weight}" text-anchor="{anchor}" fill="{fill}">{escape(text)}</text>'
-    )
+def style_axis(ax: plt.Axes, grid_axis: str = "x") -> None:
+    ax.grid(axis=grid_axis, linestyle="-", linewidth=0.6, alpha=0.35)
+    sns.despine(ax=ax, left=False, bottom=False)
 
 
-def draw_horizontal_bar_chart(
-    labels: list[str],
-    values: list[int],
-    title: str,
-    xlabel: str,
-    output_path: Path,
-    color: str,
-) -> None:
-    width = 1000
-    top = 70
-    left = 250
-    right = 80
-    row_h = 34
-    bar_h = 20
-    bottom = 70
-    height = top + bottom + row_h * len(labels)
-    chart_w = width - left - right
-    max_value = max(values) if values else 1
-
-    lines = svg_header(width, height)
-    add_text(lines, width / 2, 32, title, size=20, weight="bold", anchor="middle")
-    add_text(lines, left + chart_w / 2, height - 20, xlabel, size=12, anchor="middle")
-    lines.append(f'<line x1="{left}" y1="{top}" x2="{left}" y2="{height - bottom}" stroke="#333" stroke-width="1"/>')
-
-    for i, (label, value) in enumerate(zip(labels, values)):
-        y = top + i * row_h + 8
-        bar_w = 0 if max_value == 0 else (value / max_value) * (chart_w - 10)
-        add_text(lines, left - 10, y + 10, label, size=11, anchor="end")
-        lines.append(f'<rect x="{left}" y="{y}" width="{bar_w}" height="{bar_h}" fill="{color}"/>')
-        add_text(lines, left + bar_w + 8, y + 14, str(value), size=11)
-
-    lines.extend(svg_footer())
-    save_svg(output_path, lines)
+def add_bar_labels_horizontal(ax: plt.Axes, values: list[int]) -> None:
+    max_value = max(values) if values else 0
+    pad = max_value * 0.01 if max_value else 1
+    for patch, value in zip(ax.patches, values):
+        x = patch.get_width()
+        y = patch.get_y() + patch.get_height() / 2
+        ax.text(x + pad, y, f"{value:,}".replace(",", "."), va="center", ha="left", fontsize=10, color="#222222")
 
 
-def draw_stacked_bar_chart(periods: list[str], series: dict[str, list[int]], title: str, output_path: Path) -> None:
-    width = 1100
-    height = 620
-    left = 90
-    right = 260
-    top = 70
-    bottom = 90
-    chart_w = width - left - right
-    chart_h = height - top - bottom
-    colors = ["#2E6F5E", "#4C956C", "#73A942", "#B5C99A", "#FFC857", "#D95D39", "#6C757D", "#8E5572"]
+def add_period_totals(ax: plt.Axes, totals: list[int]) -> None:
+    max_total = max(totals) if totals else 0
+    pad = max_total * 0.015 if max_total else 1
+    for idx, total in enumerate(totals):
+        ax.text(idx, total + pad, f"{total:,}".replace(",", "."), ha="center", va="bottom", fontsize=10, color="#222222")
 
-    totals = [sum(series[label][i] for label in series) for i in range(len(periods))]
-    max_total = max(totals) if totals else 1
-    bar_group_w = chart_w / max(len(periods), 1)
-    bar_w = bar_group_w * 0.6
 
-    lines = svg_header(width, height)
-    add_text(lines, width / 2, 32, title, size=20, weight="bold", anchor="middle")
-    lines.append(f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + chart_h}" stroke="#333" stroke-width="1"/>')
-    lines.append(f'<line x1="{left}" y1="{top + chart_h}" x2="{left + chart_w}" y2="{top + chart_h}" stroke="#333" stroke-width="1"/>')
-
-    for idx, period in enumerate(periods):
-        x = left + idx * bar_group_w + (bar_group_w - bar_w) / 2
-        y_cursor = top + chart_h
-        total = totals[idx] if idx < len(totals) else 0
-        for color_idx, label in enumerate(series):
-            value = series[label][idx]
-            seg_h = 0 if max_total == 0 else (value / max_total) * chart_h
-            y_cursor -= seg_h
-            lines.append(f'<rect x="{x}" y="{y_cursor}" width="{bar_w}" height="{seg_h}" fill="{colors[color_idx % len(colors)]}"/>')
-        add_text(lines, x + bar_w / 2, top + chart_h + 25, period, size=11, anchor="middle")
-        total_y = top + chart_h - (0 if max_total == 0 else (total / max_total) * chart_h) - 8
-        add_text(lines, x + bar_w / 2, total_y, str(total), size=10, anchor="middle")
-
-    legend_x = left + chart_w + 20
-    legend_y = top + 20
-    for idx, label in enumerate(series):
-        y = legend_y + idx * 28
-        lines.append(f'<rect x="{legend_x}" y="{y - 12}" width="16" height="16" fill="{colors[idx % len(colors)]}"/>')
-        add_text(lines, legend_x + 24, y, label, size=11)
-
-    lines.extend(svg_footer())
-    save_svg(output_path, lines)
+def plot_stacked_period_chart(pivot: pd.DataFrame, title: str, ylabel: str, output_path: Path) -> None:
+    theme_labels = pivot.columns.tolist()
+    colors = [THEME_COLOR_MAP[theme] for theme in theme_labels]
+    totals = pivot.sum(axis=1).tolist()
+    ax = pivot.plot(kind="bar", stacked=True, figsize=(12.8, 7), color=colors, width=0.9, edgecolor="white", linewidth=1)
+    ax.set_title(title)
+    ax.set_xlabel("Periode", labelpad=10)
+    ax.set_ylabel(ylabel)
+    ax.legend(title="Tema", bbox_to_anchor=(0.98, 1.0), loc="upper left", frameon=False)
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", ".")))
+    ax.tick_params(axis="x", pad=-4)
+    style_axis(ax, "y")
+    add_period_totals(ax, totals)
+    save_current_figure(output_path)
 
 
 def plot_theme_distribution() -> None:
-    rows = read_csv_rows(ROOT / "atsiri_theme_review_summary.csv")
-    rows.sort(key=lambda row: int(row["matched_post_count"]))
-    labels = [sanitize_label(row["theme_label"]) for row in rows]
-    values = [int(row["matched_post_count"]) for row in rows]
-    draw_horizontal_bar_chart(
-        labels,
-        values,
-        "Distribusi Tema Atsiri Secara Keseluruhan",
-        "Jumlah Post Terdeteksi",
-        FIGURES_DIR / "fig_01_atsiri_theme_distribution_overall.svg",
-        "#2E6F5E",
-    )
+    df = pd.read_csv(ROOT / "atsiri_theme_review_summary.csv")
+    df["theme_label"] = df["theme_label"].map(sanitize_label)
+    df = df.sort_values("matched_post_count", ascending=True)
+    colors = [THEME_COLOR_MAP[label] for label in df["theme_label"]]
+
+    plt.figure(figsize=(11, 6))
+    ax = plt.gca()
+    ax.barh(df["theme_label"], df["matched_post_count"], color=colors, height=0.82, edgecolor="none")
+    ax.set_title("Distribusi Tema Atsiri Secara Keseluruhan")
+    ax.set_xlabel("Jumlah Post Terdeteksi")
+    ax.set_ylabel("")
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", ".")))
+    style_axis(ax, "x")
+    ax.margins(y=0.02)
+    add_bar_labels_horizontal(ax, df["matched_post_count"].tolist())
+    save_current_figure(FIGURES_DIR / "fig_01_atsiri_theme_distribution_overall.svg")
 
 
 def plot_theme_by_period() -> None:
-    rows = read_csv_rows(ROOT / "atsiri_theme_period_summary.csv")
-    period_order = ["2016-2017", "2018-2019", "2020-2021", "2022-2023", "2024-2025", "2026"]
-    theme_order = [
-        "Aromatic Products",
-        "Plants and Garden",
-        "Museum and Education",
-        "Wellness Experience",
-        "Culinary",
-        "Glamping",
-        "Destination",
-        "Event and Campaign",
-    ]
+    df = pd.read_csv(ROOT / "atsiri_theme_period_summary.csv")
+    df["theme_label"] = df["theme_label"].map(sanitize_label)
+    df["time_bucket"] = pd.Categorical(df["time_bucket"], categories=PERIOD_ORDER, ordered=True)
 
-    pivot: dict[str, dict[str, int]] = {period: {} for period in period_order}
-    for row in rows:
-        period = row["time_bucket"]
-        theme = sanitize_label(row["theme_label"])
-        pivot.setdefault(period, {})[theme] = int(row["matched_post_count"])
-
-    series = {
-        theme: [pivot.get(period, {}).get(theme, 0) for period in period_order]
-        for theme in theme_order
-    }
-
-    draw_stacked_bar_chart(
-        period_order,
-        series,
+    pivot = (
+        df.pivot_table(index="time_bucket", columns="theme_label", values="matched_post_count", aggfunc="sum", fill_value=0)
+        .reindex(index=PERIOD_ORDER, columns=THEME_ORDER, fill_value=0)
+    )
+    plot_stacked_period_chart(
+        pivot,
         "Distribusi Tema Atsiri per Periode Waktu",
+        "Jumlah Post Terdeteksi",
         FIGURES_DIR / "fig_02_atsiri_theme_distribution_by_period.svg",
     )
 
 
 def plot_top_hashtags() -> None:
-    rows = read_csv_rows(ROOT / "atsiri_top_hashtags.csv")[:15]
-    rows.sort(key=lambda row: int(row["count"]))
-    labels = [f"#{row['hashtag']}" for row in rows]
-    values = [int(row["count"]) for row in rows]
-    draw_horizontal_bar_chart(
-        labels,
-        values,
-        "Top 15 Hashtag Post Atsiri",
-        "Frekuensi",
-        FIGURES_DIR / "fig_03_atsiri_top_hashtags.svg",
-        "#8E5572",
-    )
+    df = pd.read_csv(ROOT / "atsiri_top_hashtags.csv").head(15).copy()
+    df["label"] = "#" + df["hashtag"].astype(str)
+    df = df.sort_values("count", ascending=True)
+
+    plt.figure(figsize=(11, 7))
+    ax = plt.gca()
+    ax.barh(df["label"], df["count"], color="#7C5C9A", height=0.82, edgecolor="none")
+    ax.set_title("Top 15 Hashtag Post Atsiri")
+    ax.set_xlabel("Frekuensi")
+    ax.set_ylabel("")
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", ".")))
+    style_axis(ax, "x")
+    ax.margins(y=0.02)
+    add_bar_labels_horizontal(ax, df["count"].tolist())
+    save_current_figure(FIGURES_DIR / "fig_03_atsiri_top_hashtags.svg")
 
 
 def plot_top_bigrams() -> None:
-    rows = read_csv_rows(ROOT / "atsiri_top_bigrams.csv")[:15]
-    rows.sort(key=lambda row: int(row["count"]))
-    labels = [row["bigram"] for row in rows]
-    values = [int(row["count"]) for row in rows]
-    draw_horizontal_bar_chart(
-        labels,
-        values,
-        "Top 15 Bigram Caption Atsiri",
-        "Frekuensi",
-        FIGURES_DIR / "fig_04_atsiri_top_bigrams.svg",
-        "#D95D39",
-    )
+    df = pd.read_csv(ROOT / "atsiri_top_bigrams.csv").head(15).copy()
+    df = df.sort_values("count", ascending=True)
+
+    plt.figure(figsize=(11, 7))
+    ax = plt.gca()
+    ax.barh(df["bigram"], df["count"], color="#D97D54", height=0.82, edgecolor="none")
+    ax.set_title("Top 15 Bigram Caption Atsiri")
+    ax.set_xlabel("Frekuensi")
+    ax.set_ylabel("")
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", ".")))
+    style_axis(ax, "x")
+    ax.margins(y=0.02)
+    add_bar_labels_horizontal(ax, df["count"].tolist())
+    save_current_figure(FIGURES_DIR / "fig_04_atsiri_top_bigrams.svg")
 
 
 def write_summary() -> None:
@@ -212,7 +188,7 @@ def write_summary() -> None:
         [
             "# Atsiri Theme Discovery Visuals",
             "",
-            "Visualisasi ini dibuat dari hasil theme discovery post Instagram Atsiri.",
+            "Visualisasi ini dibuat dari hasil theme discovery post Instagram Atsiri menggunakan matplotlib dan seaborn.",
             "",
             "## File Figure",
             "- `fig_01_atsiri_theme_distribution_overall.svg`",
@@ -232,6 +208,7 @@ def write_summary() -> None:
 
 def main() -> None:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    setup_theme()
     plot_theme_distribution()
     plot_theme_by_period()
     plot_top_hashtags()

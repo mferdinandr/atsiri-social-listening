@@ -11,6 +11,9 @@ Folder ringkasan per tahap sekarang ada di:
 - `project_tracking/03_theme_discovery_summary.md`
 - `project_tracking/04_codebook_v1_summary.md`
 - `project_tracking/05_theme_visualization_summary.md`
+- `project_tracking/06_gmaps_theme_mapping_summary.md`
+- `project_tracking/07_gmaps_mapping_audit_summary.md`
+- `project_tracking/08_gmaps_theme_visualization_summary.md`
 
 ## Status Data Saat Ini
 
@@ -197,6 +200,48 @@ Visualisasi awal untuk post Atsiri **sudah dibuat** dan output-nya ada di:
 - `data/final/theme_discovery/figures/fig_03_atsiri_top_hashtags.svg`
 - `data/final/theme_discovery/figures/fig_04_atsiri_top_bigrams.svg`
 - `data/final/theme_discovery/atsiri_theme_visuals_summary.md`
+
+Visual Atsiri sekarang sudah diregenerate menggunakan `matplotlib` dan `seaborn`.
+
+## Status Mapping Tema Google Maps
+
+Mapping awal codebook v1 ke Google Maps reviews **sudah dijalankan** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_review_theme_mapping.csv`
+- `data/final/theme_mapping/google_maps/gmaps_theme_overall_summary.csv`
+- `data/final/theme_mapping/google_maps/gmaps_theme_period_summary.csv`
+- `data/final/theme_mapping/google_maps/gmaps_theme_reviewer_bucket_summary.csv`
+- `data/final/theme_mapping/google_maps/gmaps_theme_reviewer_bucket_period_summary.csv`
+- `data/final/theme_mapping/google_maps/summary.md`
+
+Ringkasan hasil awal:
+- total review clean sumber: `3937`
+- total review yang terkena minimal satu tema: `2557`
+- total row mapping review x tema: `5438`
+
+## Status Audit Mapping Google Maps
+
+Audit untuk membedakan `matched reviews` dan `mapping rows` **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_mapping_audit.csv`
+- `data/final/theme_mapping/google_maps/gmaps_mapping_audit.md`
+- `data/final/theme_mapping/google_maps/figures/fig_05_gmaps_review_audit_funnel.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_06_gmaps_mapping_density.svg`
+
+## Status Visualisasi Tema Google Maps
+
+Visualisasi awal untuk hasil mapping tema Google Maps **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_theme_visuals_summary.md`
+- `data/final/theme_mapping/google_maps/figures/fig_07_gmaps_theme_distribution_overall.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_08_gmaps_theme_distribution_by_period.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_09_gmaps_theme_by_reviewer_bucket.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_10_gmaps_theme_reviewer_bucket_heatmap.svg`
+
+Visual Google Maps sekarang sudah diregenerate menggunakan `matplotlib` dan `seaborn`.
+
+Fungsi visualisasi ini:
+- melihat tema Google Maps yang paling dominan secara keseluruhan
+- melihat distribusi tema per bucket waktu 2 tahunan
+- melihat komposisi reviewer bucket per tema
+- melihat berapa kali setiap tema dibahas oleh masing-masing reviewer bucket
 
 ## Catatan Penting
 

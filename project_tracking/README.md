@@ -14,6 +14,12 @@ Folder ini dipakai sebagai pusat dokumentasi hasil per tahap agar progres proyek
    Ringkasan penguncian codebook tema final v1.
 5. `05_theme_visualization_summary.md`
    Ringkasan visualisasi awal dari hasil theme discovery Atsiri.
+6. `06_gmaps_theme_mapping_summary.md`
+   Ringkasan hasil mapping tema ke Google Maps reviews.
+7. `07_gmaps_mapping_audit_summary.md`
+   Ringkasan audit untuk menjelaskan matched review vs mapping row pada Google Maps.
+8. `08_gmaps_theme_visualization_summary.md`
+   Ringkasan visualisasi awal hasil mapping tema Google Maps.
 
 ## Catatan
 
