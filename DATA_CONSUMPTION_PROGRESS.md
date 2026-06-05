@@ -10,6 +10,7 @@ Folder ringkasan per tahap sekarang ada di:
 - `project_tracking/02_scraping_execution_summary.md`
 - `project_tracking/03_theme_discovery_summary.md`
 - `project_tracking/04_codebook_v1_summary.md`
+- `project_tracking/05_theme_visualization_summary.md`
 
 ## Status Data Saat Ini
 
@@ -187,6 +188,15 @@ Tema final v1 yang dipakai:
 Catatan:
 - sinyal `architecture_landscape` tidak dipakai sebagai tema mandiri
 - diarahkan masuk ke `destination_tourism`
+
+## Status Visualisasi Theme Discovery
+
+Visualisasi awal untuk post Atsiri **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_discovery/figures/fig_01_atsiri_theme_distribution_overall.svg`
+- `data/final/theme_discovery/figures/fig_02_atsiri_theme_distribution_by_period.svg`
+- `data/final/theme_discovery/figures/fig_03_atsiri_top_hashtags.svg`
+- `data/final/theme_discovery/figures/fig_04_atsiri_top_bigrams.svg`
+- `data/final/theme_discovery/atsiri_theme_visuals_summary.md`
 
 ## Catatan Penting
 

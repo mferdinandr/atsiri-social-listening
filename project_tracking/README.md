@@ -12,6 +12,8 @@ Folder ini dipakai sebagai pusat dokumentasi hasil per tahap agar progres proyek
    Ringkasan eksplorasi tema data-driven dari post Atsiri.
 4. `04_codebook_v1_summary.md`
    Ringkasan penguncian codebook tema final v1.
+5. `05_theme_visualization_summary.md`
+   Ringkasan visualisasi awal dari hasil theme discovery Atsiri.
 
 ## Catatan
 
