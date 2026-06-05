@@ -20,6 +20,14 @@ Folder ini dipakai sebagai pusat dokumentasi hasil per tahap agar progres proyek
    Ringkasan audit untuk menjelaskan matched review vs mapping row pada Google Maps.
 8. `08_gmaps_theme_visualization_summary.md`
    Ringkasan visualisasi awal hasil mapping tema Google Maps.
+9. `09_gmaps_negative_review_audit_summary.md`
+   Ringkasan audit review Google Maps negatif dengan definisi `rating <= 3`.
+10. `10_gmaps_negative_aspect_mapping_summary.md`
+   Ringkasan mapping negative aspect berbasis clause/kalimat negatif pada review Google Maps.
+11. `11_gmaps_negative_aspect_visualization_summary.md`
+   Ringkasan visualisasi negative aspect Google Maps.
+12. `12_gmaps_negative_signal_lexicon_summary.md`
+   Ringkasan kamus sinyal negatif dan severity rule untuk deteksi keluhan Google Maps.
 
 ## Catatan
 

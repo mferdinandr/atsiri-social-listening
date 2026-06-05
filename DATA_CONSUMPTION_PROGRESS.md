@@ -14,6 +14,10 @@ Folder ringkasan per tahap sekarang ada di:
 - `project_tracking/06_gmaps_theme_mapping_summary.md`
 - `project_tracking/07_gmaps_mapping_audit_summary.md`
 - `project_tracking/08_gmaps_theme_visualization_summary.md`
+- `project_tracking/09_gmaps_negative_review_audit_summary.md`
+- `project_tracking/10_gmaps_negative_aspect_mapping_summary.md`
+- `project_tracking/11_gmaps_negative_aspect_visualization_summary.md`
+- `project_tracking/12_gmaps_negative_signal_lexicon_summary.md`
 
 ## Status Data Saat Ini
 
@@ -225,6 +229,50 @@ Audit untuk membedakan `matched reviews` dan `mapping rows` **sudah dibuat** dan
 - `data/final/theme_mapping/google_maps/gmaps_mapping_audit.md`
 - `data/final/theme_mapping/google_maps/figures/fig_05_gmaps_review_audit_funnel.svg`
 - `data/final/theme_mapping/google_maps/figures/fig_06_gmaps_mapping_density.svg`
+
+## Status Audit Review Negatif Google Maps
+
+Audit review negatif Google Maps dengan definisi `rating <= 3` **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_negative_review_audit.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_review_theme_mapping.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_reviews_by_theme.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_review_audit.md`
+
+Ringkasan hasil:
+- negative reviews (`rating <= 3`): `195`
+- negative reviews matched to theme: `104`
+- negative reviews unmatched: `91`
+- negative review x theme mapping rows: `193`
+
+## Status Negative Aspect Mapping Google Maps
+
+Mapping negative aspect berbasis clause/kalimat negatif pada review Google Maps **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_negative_aspect_theme_mapping.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_aspects_by_theme.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_aspect_audit.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_aspect_theme_mapping.md`
+- `data/final/theme_mapping/google_maps/gmaps_negative_signal_lexicon.csv`
+- `data/final/theme_mapping/google_maps/gmaps_negative_signal_lexicon.md`
+
+Ringkasan hasil:
+- negative reviews (`rating <= 3`): `195`
+- negative clauses detected: `147`
+- negative clauses matched to theme: `55`
+- negative clauses unmatched: `92`
+- negative clause x theme mapping rows: `76`
+
+Catatan tambahan:
+- negative aspect kini memakai lexicon terpisah yang bisa diaudit dan diedit
+- `gmaps_negative_aspect_theme_mapping.csv` sekarang memuat `negative_strength` dan `negative_signal_groups`
+- false positive `destination_tourism` dari nama lokasi generik pada clause resto sudah dikurangi
+
+## Status Visualisasi Negative Aspect Google Maps
+
+Visualisasi negative aspect Google Maps **sudah dibuat** dan output-nya ada di:
+- `data/final/theme_mapping/google_maps/gmaps_negative_aspect_visuals_summary.md`
+- `data/final/theme_mapping/google_maps/figures/fig_11_gmaps_negative_aspects_overall.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_12_gmaps_negative_aspects_by_period.svg`
+- `data/final/theme_mapping/google_maps/figures/fig_13_gmaps_negative_aspect_audit.svg`
 
 ## Status Visualisasi Tema Google Maps
 

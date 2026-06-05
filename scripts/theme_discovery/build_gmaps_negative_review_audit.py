@@ -43,6 +43,7 @@ def main() -> None:
 
     theme_counter: Counter[tuple[str, str]] = Counter()
     matched_negative_ids: set[str] = set()
+    negative_mapping_rows: list[dict[str, str]] = []
 
     for row in mappings:
         review_id = row["review_id"]
@@ -50,6 +51,7 @@ def main() -> None:
             matched_negative_ids.add(review_id)
             key = (row["theme_code"], row["theme_label"])
             theme_counter[key] += 1
+            negative_mapping_rows.append(row)
 
     negative_unmatched = negative_ids - matched_negative_ids
 
@@ -64,6 +66,12 @@ def main() -> None:
         {"metric": "negative_theme_mapping_rows", "value": sum(theme_counter.values()), "note": "Jumlah total pasangan review negatif x tema"},
     ]
     write_csv(OUTPUT_DIR / "gmaps_negative_review_audit.csv", ["metric", "value", "note"], audit_rows)
+    if negative_mapping_rows:
+        write_csv(
+            OUTPUT_DIR / "gmaps_negative_review_theme_mapping.csv",
+            list(negative_mapping_rows[0].keys()),
+            negative_mapping_rows,
+        )
 
     theme_rows = [
         {
@@ -93,6 +101,10 @@ def main() -> None:
             f"- Negative reviews matched to theme: `{len(matched_negative_ids)}`",
             f"- Negative reviews unmatched: `{len(negative_unmatched)}`",
             f"- Negative review x theme mapping rows: `{sum(theme_counter.values())}`",
+            "",
+            "## File mapping negatif",
+            "",
+            "- `gmaps_negative_review_theme_mapping.csv` berisi subset dari `gmaps_review_theme_mapping.csv` yang hanya memuat review dengan `rating <= 3`.",
             "",
             "## Tema yang paling sering muncul pada review negatif",
             "",
